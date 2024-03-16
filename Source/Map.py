@@ -1,4 +1,5 @@
 from PIL import Image, ImageDraw
+from util import *
 
 class Map:
     def __init__ (self, filename):
@@ -23,6 +24,8 @@ class Map:
         
         #! Read Adjacency Matrix
         self.matrix = []
+        self.seekerPosition: tuple[int, int] = None
+        self.listHiderPositions: list[tuple[int, int]] = []
         if (len(Lines) - 1 < self.numRows):
             raise Exception("Your input matrix does not have enough rows")
         for i in range (0, self.numRows):
@@ -34,6 +37,11 @@ class Map:
             for j in range (0, len(temp)):
                 if (int(temp[j]) < 0 or int(temp[j]) > 3):
                     raise ValueError(f"The value at position ({i + 1},{j + 1}) must be an integer from 0 to 3")
+                
+                if (int(temp[j]) == HIDER):
+                    self.listHiderPositions.append((i, j))
+                if (int(temp[j]) == SEEKER):
+                    self.seekerPosition = (i, j)
                 
                 listValues.append(int(temp[j]))
             
@@ -62,7 +70,7 @@ class Map:
                     if (self.matrix[row - 1][col - 1] != 0):
                         raise Exception (f"Obstacle {i - self.numRows} should be put at empty cells")
                     
-                    self.matrix[row - 1][col - 1] = 1
+                    self.matrix[row - 1][col - 1] = WALL
                     
             self.obstacles.append((int(listPoints[0]), int(listPoints[1]), int(listPoints[2]), int(listPoints[3])))
             
