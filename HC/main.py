@@ -6,7 +6,7 @@ clock = pygame.time.Clock()
 
 
 lst = []
-file_name = "map1.txt"
+file_name = "Level1/map1.txt"
 with open(file_name, "r") as f:
     row, col = f.readline().split()
     row, col = int(row), int(col)

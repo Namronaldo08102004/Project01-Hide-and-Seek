@@ -71,6 +71,34 @@ class HOME:
         self.Quit()
 
 
+def move(mp: list, move: str = 'd'):
+    # step = 0
+    # mv = [(0, 1), (0, -1), (1, 0), (-1, 0), (1, 1), (-1, -1), (1, -1), (-1, 1)]
+    cur = (0, 0)
+    for i in range(len(mp)):
+        for j in range(len(mp[0])):
+            if mp[i][j] == "3":
+                cur = (i, j)
+    if cur[0] == len(mp) - 1:
+        return mp
+    if move == "d":
+        mp[cur[0]][cur[-1]], mp[cur[0] + 1][cur[-1]] = (
+            mp[cur[0] + 1][cur[-1]],
+            mp[cur[0]][cur[-1]],
+        )
+    elif move == 'l':
+        mp[cur[0]][cur[-1]], mp[cur[0]][cur[-1] - 1] = (
+            mp[cur[0]][cur[-1] - 1],
+            mp[cur[0]][cur[-1]],
+        )
+    elif move == 'r':
+        mp[cur[0]][cur[-1]], mp[cur[0]][cur[-1] + 1] = (
+            mp[cur[0]][cur[-1] + 1],
+            mp[cur[0]][cur[-1]],
+        )
+    return mp
+
+
 class Map:
     def __init__(
         self,
@@ -173,6 +201,25 @@ class Map:
                 )
                 pygame.draw.rect(self.screen, color, block)
 
+    def start_(self, button: pygame.Rect):
+        pygame.draw.rect(self.screen, WHITE, button)
+        pygame.draw.rect(self.screen, BLACK, button, 2)
+        text = self.font.render("Start", True, BLACK)
+        text_rect = text.get_rect(center=button.center)
+        self.screen.blit(text, text_rect)
+
+    def start_game(self):
+        for _ in range(10):
+            move(self.map)
+            self.draw_map()
+            pygame.time.delay(250)
+            pygame.display.flip()
+        for _ in range(10):
+            move(self.map, 'r')
+            self.draw_map()
+            pygame.time.delay(250)
+            pygame.display.flip()
+
 
 class Display:
     def __init__(self):
@@ -196,6 +243,7 @@ class Display:
     def run(self):
         self.intro()
         load_button = pygame.Rect(800, 300, 150, 50)
+        start_button = pygame.Rect(800, 400, 150, 50)
         i = 1
         while True:
             update = False
@@ -215,12 +263,21 @@ class Display:
                                 break
                     elif load_button.collidepoint(ev.pos):
                         self.map.load_map()
+
+                    elif (
+                        start_button.collidepoint(ev.pos)
+                        and self.map.selected_map is not None
+                    ):
+                        self.map.start_game()
+                        update = False
+
             if update or i == 1:
                 i -= 1
                 self.screen.blit(self.background, (0, 0))
                 self.map.choose_map()
                 if not self.map.drop_open:
                     self.map.load_button(load_button)
+                    self.map.start_(start_button)
                 self.map.draw_map()
                 pygame.display.flip()
                 self.clock.tick(60)
