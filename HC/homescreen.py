@@ -3,18 +3,22 @@ import sys
 
 import pygame
 
+WALL, HIDER, SEEKER, OBSERVABLE, OBSTACLE = 1, 2, 3, 4, 5
+
 HEIGHT, WIDTH = 720, 1080
 WHITE, BLACK = (255, 255, 255), (0, 0, 0)
 RED, GREEN, BLUE = (255, 0, 0), (0, 255, 0), (0, 0, 255)
 
 hover = (30, 233, 240)
-BG = (235, 215, 232)
-WALL = (31, 161, 212)
-SEEKER = (236, 84, 37)
-HIDER = (53, 228, 94)
+BGC = (235, 215, 232)
+WALLC = (31, 161, 212)
+SEEKERC = (236, 84, 37)
+HIDERC = (53, 228, 94)
+OBSTACLEC = (241, 225, 131)
+
 PATH = (223, 117, 69)
 
-texts = ["Level 1", "Level 2", "Level 3", "Level 4", "About", "Quit"]
+texts = ["Level 1", "Level 2", "Level 3", "Level 4", "Quit"]
 
 
 class HOME:
@@ -65,19 +69,21 @@ class HOME:
             if self.selected == -1:
                 self.Selecting()
             else:
-                return self.selected
+                if self.selected == 4:
+                    self.Quit()
+                return self.selected + 1
             pygame.display.flip()
 
         self.Quit()
 
 
-def move(mp: list, move: str = 'd'):
+def move(mp: list, move: str = "d"):
     # step = 0
     # mv = [(0, 1), (0, -1), (1, 0), (-1, 0), (1, 1), (-1, -1), (1, -1), (-1, 1)]
     cur = (0, 0)
     for i in range(len(mp)):
         for j in range(len(mp[0])):
-            if mp[i][j] == "3":
+            if mp[i][j] == 3:
                 cur = (i, j)
     if cur[0] == len(mp) - 1:
         return mp
@@ -86,12 +92,12 @@ def move(mp: list, move: str = 'd'):
             mp[cur[0] + 1][cur[-1]],
             mp[cur[0]][cur[-1]],
         )
-    elif move == 'l':
+    elif move == "l":
         mp[cur[0]][cur[-1]], mp[cur[0]][cur[-1] - 1] = (
             mp[cur[0]][cur[-1] - 1],
             mp[cur[0]][cur[-1]],
         )
-    elif move == 'r':
+    elif move == "r":
         mp[cur[0]][cur[-1]], mp[cur[0]][cur[-1] + 1] = (
             mp[cur[0]][cur[-1] + 1],
             mp[cur[0]][cur[-1]],
@@ -113,7 +119,7 @@ class Map:
         self.background = background
         self.map = []
         self.row, self.col = 0, 0
-
+        self.obstacle = []
         self.cell_size, self.top_border, self.left_border = 0, 0, 0
 
         self.level = level
@@ -171,13 +177,31 @@ class Map:
         if self.selected_map is None:
             return False
         path = "Level" + str(self.level) + "/" + self.available_maps[self.selected_map]
+
         with open(path, "r") as f:
             self.row, self.col = f.readline().split()
             self.row, self.col = int(self.row), int(self.col)
             self.map = []
+            self.obstacle = []
             for _ in range(self.row):
                 self.map.append(list(f.readline().split()))
-
+            while (line := f.readline()) != "":
+                self.obstacle.append(line.split())
+        # String to int
+        for i in range(self.row):
+            for j in range(self.col):
+                self.map[i][j] = int(self.map[i][j])
+        for i in range(len(self.obstacle)):
+            for j in range(4):
+                self.obstacle[i][j] = int(self.obstacle[i][j])
+        # Map the obstacles
+        try:
+            for obs in self.obstacle:
+                for i in range(obs[0] - 1, obs[2]):
+                    for j in range(obs[1] - 1, obs[3]):
+                        self.map[i][j] = 5
+        except:
+            pass
         self.cell_size = 600 // max(len(self.map), len(self.map[0]))
         self.top = (HEIGHT - self.cell_size * len(self.map)) / 2
         self.left = (HEIGHT - self.cell_size * len(self.map[0])) / 2
@@ -186,13 +210,19 @@ class Map:
     def draw_map(self):
         for i in range(len(self.map)):
             for j in range(len(self.map[0])):
-                color = BG  # grey
-                if self.map[i][j] == "1":
-                    color = WALL
-                elif self.map[i][j] == "2":
-                    color = HIDER
-                elif self.map[i][j] == "3":
-                    color = SEEKER
+                color = BGC  # grey
+                match self.map[i][j]:
+                    case 1:
+                        color = WALLC
+                    case 2:
+                        color = HIDERC
+                    case 3:
+                        color = SEEKERC
+                    case 4:
+                        pass
+                    case 5:
+                        color = OBSTACLEC
+
                 block = pygame.Rect(
                     j * self.cell_size + self.left,
                     i * self.cell_size + self.top,
@@ -215,7 +245,7 @@ class Map:
             pygame.time.delay(250)
             pygame.display.flip()
         for _ in range(10):
-            move(self.map, 'r')
+            move(self.map, "r")
             self.draw_map()
             pygame.time.delay(250)
             pygame.display.flip()
