@@ -10,6 +10,7 @@ GRAY = (128, 128, 128)
 LIGHTPINK = (255, 182, 193)
 SKINCOLOR = (255, 224, 189)
 RED = (255, 0, 0)
+GREEN = (0, 171, 28)
             
 def manhattanDistance (point1: tuple[int, int], point2: tuple[int, int]):
     return abs(point2[0] - point1[0]) + abs(point2[1] - point1[1])
@@ -22,7 +23,7 @@ def getValidNeighbors (state: tuple[int, int], map: list[list[int]]) -> list[tup
 
         result = []
         for (x, y) in candidates:
-            if 0 < x < width - 1 and 0 < y < length - 1:
+            if 0 <= x <= width - 1 and 0 <= y <= length - 1:
                 check = True
                 if (map[x][y] == WALL):
                     check = False

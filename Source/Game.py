@@ -211,12 +211,19 @@ while True:
                     
                     pygame.display.flip()
                     
-                    sleep(1)
+                    sleep(0.125)
                     if (game.takeTurn == SEEKER):
                         for cell in game.listObservableCells:
                             rect = blocks[cell[0]][cell[1]][0]
                             pygame.draw.rect(screen, WHITE, rect)
                             pygame.draw.rect(screen, BLACK, rect, 2)
+                            
+                        for row in range (0, game.map.numRows):
+                            for col in range (0, game.map.numCols):
+                                if (game.visitedMatrix[row][col] == True and game.map.matrix[row][col] != WALL):
+                                    rect = blocks[row][col][0]
+                                    pygame.draw.rect(screen, GREEN, rect)
+                                    pygame.draw.rect(screen, BLACK, rect, 2)
                                 
                         pygame.display.flip()
                         
@@ -249,6 +256,7 @@ while True:
                             game.score = game.score - 1
                         else:
                             game.score = game.score + 20
+                            sleep(5)
                             break
 
                     else:
