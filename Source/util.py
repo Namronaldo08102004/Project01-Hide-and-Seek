@@ -43,7 +43,7 @@ class Node:
         else:
             self.pathCost = parent.pathCost + 1
             
-        self.f = self.pathCost + manhattanDistance(self.state, goal) + 1000 * visited
+        self.f = self.pathCost + manhattanDistance(self.state, goal) + 100 * visited
         
     def __lt__ (self, other):
         return self.f < other.f

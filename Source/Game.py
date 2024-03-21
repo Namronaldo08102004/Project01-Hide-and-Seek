@@ -211,7 +211,7 @@ while True:
                     
                     pygame.display.flip()
                     
-                    sleep(0.125)
+                    sleep(0.003)
                     if (game.takeTurn == SEEKER):
                         for cell in game.listObservableCells:
                             rect = blocks[cell[0]][cell[1]][0]

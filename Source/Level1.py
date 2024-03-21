@@ -1,31 +1,6 @@
-from Map import *
-from random import choice
-from A_Star import *
-    
-#TODO: WE CAN TRY TO CALCULATE TOTAL WALL INTERSECTIONs in the radius of 3 around a certain wall intersection (tonight)
-class WallIntersection:
-    def __init__ (self, state: tuple[int, int], seekerPosition: tuple[int, int], map, visitedMatrix):
-        self.state = state
-        self.seekerPosition = seekerPosition
-        self.map = map
-        self.visitedMatrix = visitedMatrix
-        
-    def __lt__ (self, other):
-        goal1 = A_Star(self.seekerPosition, self.state, self.map, self.visitedMatrix)
-        goal2 = A_Star(self.seekerPosition, other.state, self.map, self.visitedMatrix)
-        shortestPath1 = []
-        shortestPath2 = []
-        
-        while (goal1 is not None):
-            shortestPath1.append(goal1.state)
-            goal1 = goal1.parent
-        while (goal2 is not None):
-            shortestPath2.append(goal2.state)
-            goal2 = goal2.parent
-        
-        return len(shortestPath1) < len(shortestPath2)
+from Level_util import *
 
-class Level1:
+class Level1 (Level):
     """
         Our strategy for level 1 is sequentialy finding each wall intersection in the map.
         When reached a certain wall intersection:
@@ -46,11 +21,7 @@ class Level1:
          ------
     """ 
     def __init__ (self, map: Map):
-        self.map: Map = map
-        self.score: int = 0
-        self.numSeekerSteps: int = 0 #? Increase this attribute by 1 if seeker took its turn and the game is not over
-        self.numHiderSteps: int = 0 #? Increase this attribute by 1 if hider took its turn and the game is not over
-        self.takeTurn: int = SEEKER
+        Level.__init__ (self, map)
         
         #! Define a temporary matrix for saving cells that were identified to not include hider
         self.visitedMatrix: list[list[bool]] = []
@@ -110,7 +81,7 @@ class Level1:
         
         #! Define seeker and hider for the game
         self.seekerPosition: tuple[int, int] = map.seekerPosition
-        self.listObservableCells: list[tuple[int, int]] = self.getObservableCells()
+        self.listObservableCells: list[tuple[int, int]] = self.getObservableCells(self.seekerPosition)
         self.IdentifiedHider: tuple[int, int] = self.identifyObservableHider()
         self.IdentifiedAnnouncement: tuple[int, int] = None
         self.listUnvisitedPositionsAroundAnnouncement: list[tuple[int, int]] = None
@@ -137,478 +108,14 @@ class Level1:
             self.goalPosition: tuple[int, int] = self.getNearestWallIntersection()
             self.path: list[tuple[int, int]] = self.getShortestPath(self.goalPosition)
             self.pathMove: int = 0
-    
-    def broadcastAnnouncement (self) -> tuple[int, int]:
-        listPositions = []
-        
-        for level in range (1, 3):
-            for row in range (self.hiderPosition[0] - level, self.hiderPosition[0] + level + 1):
-                if (row >= 0 and row < self.map.numRows):
-                    for col in range (self.hiderPosition[1] - level, self.hiderPosition[1] + level + 1):
-                        if (col >= 0 and col < self.map.numCols and (row, col) != self.hiderPosition):
-                            listPositions.append((row, col))
-                    
-        randomPosition = choice(listPositions)
-        return randomPosition
-    
+            
     def hiderTakeTurn (self):
-        if (self.numHiderSteps == 0 or self.numHiderSteps % 8 != 0):
+        if (self.numHiderSteps % 8 != 7):
             return
         
         #! The hider will broadcast an announcement after each 8 steps and set the time for this announcement
-        self.announcement = self.broadcastAnnouncement()
+        self.announcement = self.broadcastAnnouncement(self.hiderPosition)
         self.announcementTime = 0
-        
-    def getObservableCells (self):
-        radius_3_matrix: list[list[bool]] = []
-        seeker_position_in_matrix: tuple[int, int] = None
-        for row in range (self.seekerPosition[0] - 3, self.seekerPosition[0] + 4):
-            if (row >= 0 and row < self.map.numRows):
-                tempList: list[int] = []
-            
-                for col in range (self.seekerPosition[1] - 3, self.seekerPosition[1] + 4):
-                    if (col >= 0 and col < self.map.numCols):
-                        if (self.map.matrix[row][col] == WALL):
-                            tempList.append(False)
-                        else:
-                            tempList.append(True)
-                            
-                        if ((row, col) == self.seekerPosition):
-                            seeker_position_in_matrix = (len(radius_3_matrix), len(tempList) - 1)
-                    
-                radius_3_matrix.append(tempList)
-                
-        X = seeker_position_in_matrix[0]
-        Y = seeker_position_in_matrix[1]
-        numRows = len(radius_3_matrix)
-        numCols = len(radius_3_matrix[0])
-                
-        #! Check in the radius 1 around the current seeker position
-        #? Case 1
-        if (X - 1 >= 0 and Y - 1 >= 0 and radius_3_matrix[X - 1][Y - 1] == False):
-            if (X - 3 >= 0 and Y - 3 >= 0):    
-                radius_3_matrix[X - 3][Y - 3] = False
-            if (X - 3 >= 0 and Y - 2 >= 0):    
-                radius_3_matrix[X - 3][Y - 2] = False
-            if (X - 2 >= 0 and Y - 3 >= 0):    
-                radius_3_matrix[X - 2][Y - 3] = False
-            if (X - 2 >= 0 and Y - 2 >= 0):    
-                radius_3_matrix[X - 2][Y - 2] = False
-                
-            if (X - 1 >= 0 and radius_3_matrix[X - 1][Y] == False):
-                if (X - 3 >= 0 and Y - 1 >= 0):
-                    radius_3_matrix[X - 3][Y - 1] = False
-                if (X - 3 >= 0):
-                    radius_3_matrix[X - 3][Y] = False
-                if (X - 3 >= 0 and Y + 1 < numCols):
-                    radius_3_matrix[X - 3][Y + 1] = False
-                if (X - 2 >= 0):
-                    radius_3_matrix[X - 2][Y] = False
-                if (X - 2 >= 0 and Y - 1 >= 0):
-                    radius_3_matrix[X - 2][Y - 1] = False
-                if (X - 3 >= 0 and Y - 2 >= 0):
-                    radius_3_matrix[X - 3][Y - 2] = False
-                if (X - 3 >= 0 and Y - 1 >= 0):
-                    radius_3_matrix[X - 3][Y - 1] = False
-            
-            if (Y - 1 >= 0 and radius_3_matrix[X][Y - 1] == False):
-                if (Y - 3 >= 0):
-                    radius_3_matrix[X][Y - 3] = False
-                if (Y - 2 >= 0):
-                    radius_3_matrix[X][Y - 2] = False
-                if (X - 1 >= 0 and Y - 3 >= 0):
-                    radius_3_matrix[X - 1][Y - 3] = False
-                if (X + 1 < numRows and Y - 3 >= 0):
-                    radius_3_matrix[X + 1][Y - 3] = False
-                if (X - 1 >= 0 and Y - 2 >= 0):
-                    radius_3_matrix[X - 1][Y - 2] = False
-                if (X - 1 >= 0 and Y - 3 >= 0):
-                    radius_3_matrix[X - 1][Y - 3] = False
-                if (X - 2 >= 0 and Y - 3 >= 0):
-                    radius_3_matrix[X - 2][Y - 3] = False
-        
-        #? Case 2
-        if (X - 1 >= 0 and radius_3_matrix[X - 1][Y] == False):
-            if (X - 3 >= 0 and Y - 1 >= 0):
-                radius_3_matrix[X - 3][Y - 1] = False
-            if (X - 3 >= 0):
-                radius_3_matrix[X - 3][Y] = False
-            if (X - 3 >= 0 and Y + 1 < numCols):
-                radius_3_matrix[X - 3][Y + 1] = False
-            if (X - 2 >= 0):
-                radius_3_matrix[X - 2][Y] = False
-                
-            if (X - 1 >= 0 and Y - 1 >= 0 and radius_3_matrix[X - 1][Y - 1] == False):
-                if (X - 3 >= 0 and Y - 3 >= 0):    
-                    radius_3_matrix[X - 3][Y - 3] = False
-                if (X - 3 >= 0 and Y - 2 >= 0):    
-                    radius_3_matrix[X - 3][Y - 2] = False
-                if (X - 2 >= 0 and Y - 3 >= 0):    
-                    radius_3_matrix[X - 2][Y - 3] = False
-                if (X - 2 >= 0 and Y - 2 >= 0):    
-                    radius_3_matrix[X - 2][Y - 2] = False
-                if (X - 2 >= 0 and Y - 1 >= 0):
-                    radius_3_matrix[X - 2][Y - 1] = False
-                if (X - 3 >= 0 and Y - 2 >= 0):
-                    radius_3_matrix[X - 3][Y - 2] = False
-                if (X - 3 >= 0 and Y - 1 >= 0):
-                    radius_3_matrix[X - 3][Y - 1] = False
-                    
-            if (X - 1 >= 0 and Y + 1 < numCols and radius_3_matrix[X - 1][Y + 1] == False):
-                if (X - 3 >= 0 and Y + 2 < numCols):
-                    radius_3_matrix[X - 3][Y + 2] = False
-                if (X - 3 >= 0 and Y + 3 < numCols):
-                    radius_3_matrix[X - 3][Y + 3] = False
-                if (X - 2 >= 0 and Y + 2 < numCols):
-                    radius_3_matrix[X - 2][Y + 2] = False
-                if (X - 2 >= 0 and Y + 3 < numCols):
-                    radius_3_matrix[X - 2][Y + 3] = False
-                if (X - 2 >= 0 and Y + 1 < numCols):
-                    radius_3_matrix[X - 2][Y + 1] = False
-                if (X - 3 >= 0 and Y + 1 < numCols):
-                    radius_3_matrix[X - 3][Y + 1] = False
-                if (X - 3 >= 0 and Y + 2 < numCols):
-                    radius_3_matrix[X - 3][Y + 2] = False
-            
-        #? Case 3
-        if (X - 1 >= 0 and Y + 1 < numCols and radius_3_matrix[X - 1][Y + 1] == False):
-            if (X - 3 >= 0 and Y + 2 < numCols):
-                radius_3_matrix[X - 3][Y + 2] = False
-            if (X - 3 >= 0 and Y + 3 < numCols):
-                radius_3_matrix[X - 3][Y + 3] = False
-            if (X - 2 >= 0 and Y + 2 < numCols):
-                radius_3_matrix[X - 2][Y + 2] = False
-            if (X - 2 >= 0 and Y + 3 < numCols):
-                radius_3_matrix[X - 2][Y + 3] = False
-                
-            if (X - 1 >= 0 and radius_3_matrix[X - 1][Y] == False):
-                if (X - 3 >= 0 and Y - 1 >= 0):
-                    radius_3_matrix[X - 3][Y - 1] = False
-                if (X - 3 >= 0):
-                    radius_3_matrix[X - 3][Y] = False
-                if (X - 3 >= 0 and Y + 1 < numCols):
-                    radius_3_matrix[X - 3][Y + 1] = False
-                if (X - 2 >= 0):
-                    radius_3_matrix[X - 2][Y] = False
-                if (X - 2 >= 0 and Y + 1 < numCols):
-                    radius_3_matrix[X - 2][Y + 1] = False
-                if (X - 3 >= 0 and Y + 1 < numCols):
-                    radius_3_matrix[X - 3][Y + 1] = False
-                if (X - 3 >= 0 and Y + 2 < numCols):
-                    radius_3_matrix[X - 3][Y + 2] = False
-                    
-            if (Y + 1 < numCols and radius_3_matrix[X][Y + 1] == False):
-                if (Y + 2 < numCols):
-                    radius_3_matrix[X][Y + 2] = False
-                if (Y + 3 < numCols):
-                    radius_3_matrix[X][Y + 3] = False
-                if (X - 1 >= 0 and Y + 3 < numCols):
-                    radius_3_matrix[X - 1][Y + 3] = False
-                if (X + 1 < numRows and Y + 3 < numCols):
-                    radius_3_matrix[X + 1][Y + 3] = False
-                if (X - 1 >= 0 and Y + 2 < numCols):
-                    radius_3_matrix[X - 1][Y + 2] = False
-                if (X - 2 >= 0 and Y + 3 < numCols):
-                    radius_3_matrix[X - 2][Y + 3] = False
-                if (X - 1 >= 0 and Y + 3 < numCols):
-                    radius_3_matrix[X - 1][Y + 3] = False
-        
-        #? Case 4      
-        if (Y + 1 < numCols and radius_3_matrix[X][Y + 1] == False):
-            if (Y + 2 < numCols):
-                radius_3_matrix[X][Y + 2] = False
-            if (Y + 3 < numCols):
-                radius_3_matrix[X][Y + 3] = False
-            if (X - 1 >= 0 and Y + 3 < numCols):
-                radius_3_matrix[X - 1][Y + 3] = False
-            if (X + 1 < numRows and Y + 3 < numCols):
-                radius_3_matrix[X + 1][Y + 3] = False
-                
-            if (X - 1 >= 0 and Y + 1 < numCols and radius_3_matrix[X - 1][Y + 1] == False):
-                if (X - 3 >= 0 and Y + 2 < numCols):
-                    radius_3_matrix[X - 3][Y + 2] = False
-                if (X - 3 >= 0 and Y + 3 < numCols):
-                    radius_3_matrix[X - 3][Y + 3] = False
-                if (X - 2 >= 0 and Y + 2 < numCols):
-                    radius_3_matrix[X - 2][Y + 2] = False
-                if (X - 2 >= 0 and Y + 3 < numCols):
-                    radius_3_matrix[X - 2][Y + 3] = False
-                if (X - 1 >= 0 and Y + 2 < numCols):
-                    radius_3_matrix[X - 1][Y + 2] = False
-                if (X - 2 >= 0 and Y + 3 < numCols):
-                    radius_3_matrix[X - 2][Y + 3] = False
-                if (X - 1 >= 0 and Y + 3 < numCols):
-                    radius_3_matrix[X - 1][Y + 3] = False
-                    
-            if (X + 1 < numRows and Y + 1 < numCols and radius_3_matrix[X + 1][Y + 1] == False):
-                if (X + 2 < numRows and Y + 2 < numCols):
-                    radius_3_matrix[X + 2][Y + 2] = False
-                if (X + 2 < numRows and Y + 3 < numCols):
-                    radius_3_matrix[X + 2][Y + 3] = False
-                if (X + 3 < numRows and Y + 2 < numCols):
-                    radius_3_matrix[X + 3][Y + 2] = False
-                if (X + 3 < numRows and Y + 3 < numCols):
-                    radius_3_matrix[X + 3][Y + 3] = False
-                if (X + 1 < numRows and Y + 2 < numCols):
-                    radius_3_matrix[X + 1][Y + 2] = False
-                if (X + 1 < numRows and Y + 3 < numCols):
-                    radius_3_matrix[X + 1][Y + 3] = False
-                if (X + 2 < numRows and Y + 3 < numCols):
-                    radius_3_matrix[X + 2][Y + 3] = False
-        
-        #? Case 5 
-        if (X + 1 < numRows and Y + 1 < numCols and radius_3_matrix[X + 1][Y + 1] == False):
-            if (X + 2 < numRows and Y + 2 < numCols):
-                radius_3_matrix[X + 2][Y + 2] = False
-            if (X + 2 < numRows and Y + 3 < numCols):
-                radius_3_matrix[X + 2][Y + 3] = False
-            if (X + 3 < numRows and Y + 2 < numCols):
-                radius_3_matrix[X + 3][Y + 2] = False
-            if (X + 3 < numRows and Y + 3 < numCols):
-                radius_3_matrix[X + 3][Y + 3] = False
-            
-            if (Y + 1 < numCols and radius_3_matrix[X][Y + 1] == False):
-                if (Y + 2 < numCols):
-                    radius_3_matrix[X][Y + 2] = False
-                if (Y + 3 < numCols):
-                    radius_3_matrix[X][Y + 3] = False
-                if (X - 1 >= 0 and Y + 3 < numCols):
-                    radius_3_matrix[X - 1][Y + 3] = False
-                if (X + 1 < numRows and Y + 3 < numCols):
-                    radius_3_matrix[X + 1][Y + 3] = False
-                if (X + 1 < numRows and Y + 2 < numCols):
-                    radius_3_matrix[X + 1][Y + 2] = False
-                if (X + 1 < numRows and Y + 3 < numCols):
-                    radius_3_matrix[X + 1][Y + 3] = False
-                if (X + 2 < numRows and Y + 3 < numCols):
-                    radius_3_matrix[X + 2][Y + 3] = False
-                
-            if (X + 1 < numRows and radius_3_matrix[X + 1][Y] == False):
-                if (X + 2 < numRows):
-                    radius_3_matrix[X + 2][Y] = False
-                if (X + 3 < numRows):
-                    radius_3_matrix[X + 3][Y] = False
-                if (X + 3 < numRows and Y - 1 >= 0):
-                    radius_3_matrix[X + 3][Y - 1] = False
-                if (X + 3 < numRows and Y + 1 < numCols):
-                    radius_3_matrix[X + 3][Y + 1] = False
-                if (X + 2 < numRows and Y + 1 < numCols):
-                    radius_3_matrix[X + 2][Y + 1] = False
-                if (X + 3 < numRows and Y + 1 < numCols):
-                    radius_3_matrix[X + 3][Y + 1] = False
-                if (X + 3 < numRows and Y + 2 < numCols):
-                    radius_3_matrix[X + 3][Y + 2] = False    
-        
-        #? Case 6
-        if (X + 1 < numRows and radius_3_matrix[X + 1][Y] == False):
-            if (X + 2 < numRows):
-                radius_3_matrix[X + 2][Y] = False
-            if (X + 3 < numRows):
-                radius_3_matrix[X + 3][Y] = False
-            if (X + 3 < numRows and Y - 1 >= 0):
-                radius_3_matrix[X + 3][Y - 1] = False
-            if (X + 3 < numRows and Y + 1 < numCols):
-                radius_3_matrix[X + 3][Y + 1] = False
-                
-            if (X + 1 < numRows and Y + 1 < numCols and radius_3_matrix[X + 1][Y + 1] == False):
-                if (X + 2 < numRows and Y + 2 < numCols):
-                    radius_3_matrix[X + 2][Y + 2] = False
-                if (X + 2 < numRows and Y + 3 < numCols):
-                    radius_3_matrix[X + 2][Y + 3] = False
-                if (X + 3 < numRows and Y + 2 < numCols):
-                    radius_3_matrix[X + 3][Y + 2] = False
-                if (X + 3 < numRows and Y + 3 < numCols):
-                    radius_3_matrix[X + 3][Y + 3] = False
-                if (X + 2 < numRows and Y + 1 < numCols):
-                    radius_3_matrix[X + 2][Y + 1] = False
-                if (X + 3 < numRows and Y + 1 < numCols):
-                    radius_3_matrix[X + 3][Y + 1] = False
-                if (X + 3 < numRows and Y + 2 < numCols):
-                    radius_3_matrix[X + 3][Y + 2] = False
-            
-            if (X + 1 < numRows and Y - 1 >= 0 and radius_3_matrix[X + 1][Y - 1] == False):
-                if (X + 2 < numRows and Y - 3 >= 0):
-                    radius_3_matrix[X + 2][Y - 3] = False
-                if (X + 2 < numRows and Y - 2 >= 0):
-                    radius_3_matrix[X + 2][Y - 2] = False
-                if (X + 3 < numRows and Y - 3 >= 0):
-                    radius_3_matrix[X + 3][Y - 3] = False
-                if (X + 3 < numRows and Y - 2 >= 0):
-                    radius_3_matrix[X + 3][Y - 2] = False
-                if (X + 2 < numRows and Y - 1 >= 0):
-                    radius_3_matrix[X + 2][Y - 1] = False
-                if (X + 3 < numRows and Y - 1 >= 0):
-                    radius_3_matrix[X + 3][Y - 1] = False
-                if (X + 3 < numRows and Y - 2 >= 0):
-                    radius_3_matrix[X + 3][Y - 2] = False
-                
-        #? Case 7
-        if (X + 1 < numRows and Y - 1 >= 0 and radius_3_matrix[X + 1][Y - 1] == False):
-            if (X + 2 < numRows and Y - 3 >= 0):
-                radius_3_matrix[X + 2][Y - 3] = False
-            if (X + 2 < numRows and Y - 2 >= 0):
-                radius_3_matrix[X + 2][Y - 2] = False
-            if (X + 3 < numRows and Y - 3 >= 0):
-                radius_3_matrix[X + 3][Y - 3] = False
-            if (X + 3 < numRows and Y - 2 >= 0):
-                radius_3_matrix[X + 3][Y - 2] = False
-                
-            if (X + 1 < numRows and radius_3_matrix[X + 1][Y] == False):
-                if (X + 2 < numRows):
-                    radius_3_matrix[X + 2][Y] = False
-                if (X + 3 < numRows):
-                    radius_3_matrix[X + 3][Y] = False
-                if (X + 3 < numRows and Y - 1 >= 0):
-                    radius_3_matrix[X + 3][Y - 1] = False
-                if (X + 3 < numRows and Y + 1 < numCols):
-                    radius_3_matrix[X + 3][Y + 1] = False
-                if (X + 2 < numRows and Y - 1 >= 0):
-                    radius_3_matrix[X + 2][Y - 1] = False
-                if (X + 3 < numRows and Y - 1 >= 0):
-                    radius_3_matrix[X + 3][Y - 1] = False
-                if (X + 3 < numRows and Y - 2 >= 0):
-                    radius_3_matrix[X + 3][Y - 2] = False
-                    
-            if (Y - 1 >= 0 and radius_3_matrix[X][Y - 1] == False):
-                if (Y - 3 >= 0):
-                    radius_3_matrix[X][Y - 3] = False
-                if (Y - 2 >= 0):
-                    radius_3_matrix[X][Y - 2] = False
-                if (X - 1 >= 0 and Y - 3 >= 0):
-                    radius_3_matrix[X - 1][Y - 3] = False
-                if (X + 1 < numRows and Y - 3 >= 0):
-                    radius_3_matrix[X + 1][Y - 3] = False
-                if (X + 1 < numRows and Y - 2 >= 0):
-                    radius_3_matrix[X + 1][Y - 2] = False
-                if (X + 1 < numRows and Y - 3 >= 0):
-                    radius_3_matrix[X + 1][Y - 3] = False
-                if (X + 2 < numRows and Y - 3 >= 0):
-                    radius_3_matrix[X + 2][Y - 3] = False
-                
-        #? Case 8
-        if (Y - 1 >= 0 and radius_3_matrix[X][Y - 1] == False):
-            if (Y - 3 >= 0):
-                radius_3_matrix[X][Y - 3] = False
-            if (Y - 2 >= 0):
-                radius_3_matrix[X][Y - 2] = False
-            if (X - 1 >= 0 and Y - 3 >= 0):
-                radius_3_matrix[X - 1][Y - 3] = False
-            if (X + 1 < numRows and Y - 3 >= 0):
-                radius_3_matrix[X + 1][Y - 3] = False
-                
-            if (X + 1 < numRows and Y - 1 >= 0 and radius_3_matrix[X + 1][Y - 1] == False):
-                if (X + 2 < numRows and Y - 3 >= 0):
-                    radius_3_matrix[X + 2][Y - 3] = False
-                if (X + 2 < numRows and Y - 2 >= 0):
-                    radius_3_matrix[X + 2][Y - 2] = False
-                if (X + 3 < numRows and Y - 3 >= 0):
-                    radius_3_matrix[X + 3][Y - 3] = False
-                if (X + 3 < numRows and Y - 2 >= 0):
-                    radius_3_matrix[X + 3][Y - 2] = False
-                if (X + 1 < numRows and Y - 2 >= 0):
-                    radius_3_matrix[X + 1][Y - 2] = False
-                if (X + 1 < numRows and Y - 3 >= 0):
-                    radius_3_matrix[X + 1][Y - 3] = False
-                if (X + 2 < numRows and Y - 3 >= 0):
-                    radius_3_matrix[X + 2][Y - 3] = False
-                    
-            if (X - 1 >= 0 and Y - 1 >= 0 and radius_3_matrix[X - 1][Y - 1] == False):
-                if (X - 3 >= 0 and Y - 3 >= 0):    
-                    radius_3_matrix[X - 3][Y - 3] = False
-                if (X - 3 >= 0 and Y - 2 >= 0):    
-                    radius_3_matrix[X - 3][Y - 2] = False
-                if (X - 2 >= 0 and Y - 3 >= 0):    
-                    radius_3_matrix[X - 2][Y - 3] = False
-                if (X - 2 >= 0 and Y - 2 >= 0):    
-                    radius_3_matrix[X - 2][Y - 2] = False
-                if (X - 1 >= 0 and Y - 2 >= 0):
-                    radius_3_matrix[X - 1][Y - 2] = False
-                if (X - 1 >= 0 and Y - 3 >= 0):
-                    radius_3_matrix[X - 1][Y - 3] = False
-                if (X - 2 >= 0 and Y - 3 >= 0):
-                    radius_3_matrix[X - 2][Y - 3] = False
-            
-        #! Check in the radius 2 around the current seeker position
-        if (X - 2 >= 0 and Y - 2 >= 0 and radius_3_matrix[X - 2][Y - 2] == False):
-            if (X - 3 >= 0 and Y - 3 >= 0):
-                radius_3_matrix[X - 3][Y - 3] = False
-        if (X - 2 >= 0 and Y - 1 >= 0 and radius_3_matrix[X - 2][Y - 1] == False):
-            if (X - 3 >= 0 and Y - 2 >= 0):
-                radius_3_matrix[X - 3][Y - 2] = False
-            if (X - 3 >= 0 and Y - 1 >= 0):
-                radius_3_matrix[X - 3][Y - 1] = False
-        if (X - 2 >= 0 and radius_3_matrix[X - 2][Y] == False):
-            if (X - 3 >= 0):
-                radius_3_matrix[X - 3][Y] = False
-        if (X - 2 >= 0 and Y + 1 < numCols and radius_3_matrix[X - 2][Y + 1] == False):
-            if (X - 3 >= 0 and Y + 1 < numCols):
-                radius_3_matrix[X - 3][Y + 1] = False
-            if (X - 3 >= 0 and Y + 2 < numCols):
-                radius_3_matrix[X - 3][Y + 2] = False
-        if (X - 2 >= 0 and Y + 2 < numCols and radius_3_matrix[X - 2][Y + 2] == False):
-            if (X - 3 >= 0 and Y + 3 < numCols):
-                radius_3_matrix[X - 3][Y + 3] = False
-        if (X - 1 >= 0 and Y + 2 < numCols and radius_3_matrix[X - 1][Y + 2] == False):
-            if (X - 2 >= 0 and Y + 3 < numCols):
-                radius_3_matrix[X - 2][Y + 3] = False
-            if (X - 1 >= 0 and Y + 3 < numCols):
-                radius_3_matrix[X - 1][Y + 3] = False
-        if (Y + 2 < numCols and radius_3_matrix[X][Y + 2] == False):
-            if (Y + 3 < numCols):
-                radius_3_matrix[X][Y + 3] = False
-        if (X + 1 < numRows and Y + 2 < numCols and radius_3_matrix[X + 1][Y + 2] == False):
-            if (X + 1 < numRows and Y + 3 < numCols):
-                radius_3_matrix[X + 1][Y + 3] = False
-            if (X + 2 < numRows and Y + 3 < numCols):
-                radius_3_matrix[X + 2][Y + 3] = False
-        if (X + 2 < numRows and Y + 2 < numCols and radius_3_matrix[X + 2][Y + 2] == False):
-            if (X + 3 < numRows and Y + 3 < numCols):
-                radius_3_matrix[X + 3][Y + 3] = False
-        if (X + 2 < numRows and Y + 1 < numCols and radius_3_matrix[X + 2][Y + 1] == False):
-            if (X + 3 < numRows and Y + 1 < numCols):
-                radius_3_matrix[X + 3][Y + 1] = False
-            if (X + 3 < numRows and Y + 2 < numCols):
-                radius_3_matrix[X + 3][Y + 2] = False
-        if (X + 2 < numRows and radius_3_matrix[X + 2][Y] == False):
-            if (X + 3 < numRows):
-                radius_3_matrix[X + 3][Y] = False
-        if (X + 2 < numRows and Y - 1 >= 0 and radius_3_matrix[X + 2][Y - 1] == False):
-            if (X + 3 < numRows and Y - 1 >= 0):
-                radius_3_matrix[X + 3][Y - 1] = False
-            if (X + 3 < numRows and Y - 2 >= 0):
-                radius_3_matrix[X + 3][Y - 2] = False
-        if (X + 2 < numRows and Y - 2 >= 0 and radius_3_matrix[X + 2][Y - 2] == False):
-            if (X + 3 < numRows and Y - 3 >= 0):
-                radius_3_matrix[X + 3][Y - 3] = False
-        if (X + 1 < numRows and Y - 2 >= 0 and radius_3_matrix[X + 1][Y - 2] == False):
-            if (X + 1 < numRows and Y - 3 >= 0):
-                radius_3_matrix[X + 1][Y - 3] = False
-            if (X + 2 < numRows and Y - 3 >= 0):
-                radius_3_matrix[X + 2][Y - 3] = False
-        if (Y - 2 >= 0 and radius_3_matrix[X][Y - 2] == False):
-            if (Y - 3 >= 0):
-                radius_3_matrix[X][Y - 3] = False
-        if (X - 1 >= 0 and Y - 2 >= 0 and radius_3_matrix[X - 1][Y - 2] == False):
-            if (X - 1 >= 0 and Y - 3 >= 0):
-                radius_3_matrix[X - 1][Y - 3] = False
-            if (X - 2 >= 0 and Y - 3 >= 0):
-                radius_3_matrix[X - 2][Y - 3] = False
-        
-        listObservablePositions = []
-        index_row = 0
-        for row in range (self.seekerPosition[0] - 3, self.seekerPosition[0] + 4):
-            if (row >= 0 and row < self.map.numRows):
-                index_col = 0
-                
-                for col in range (self.seekerPosition[1] - 3, self.seekerPosition[1] + 4):
-                    if (col >= 0 and col < self.map.numCols):
-                        if (radius_3_matrix[index_row][index_col] and (row, col) != self.seekerPosition):
-                            listObservablePositions.append((row, col))
-                        index_col = index_col + 1
-                        
-                index_row = index_row + 1
-                    
-        return listObservablePositions
     
     def getNearestWallIntersection (self) -> tuple[int, int]:
         def countNumWallsBetweenTwoPositions (position1: tuple[int, int], position2: tuple[int, int]):
@@ -847,6 +354,56 @@ class Level1:
             numWallIntersectionsBetweenThem = min(numWallIntersectionsBetweenThem, min(temp1, temp2))
             return numWallIntersectionsBetweenThem
         
+        def checkCorner (position: tuple[int, int]) -> bool:
+            row = position[0]
+            col = position[1]
+            numRows = self.map.numRows
+            numCols = self.map.numCols
+            if (
+                (row - 1 >= 0 and self.map.matrix[row - 1][col] == WALL and row + 1 < numRows and self.map.matrix[row + 1][col] == WALL and col - 1 >= 0 and self.map.matrix[row][col - 1] == WALL)
+                or 
+                (row - 1 >= 0 and self.map.matrix[row - 1][col] == WALL and row + 1 < numRows and self.map.matrix[row + 1][col] == WALL and col + 1 < numCols and self.map.matrix[row][col + 1] == WALL)
+                or
+                (col - 1 >= 0 and self.map.matrix[row][col - 1] == WALL and col + 1 < numCols and self.map.matrix[row][col + 1] == WALL and row - 1 >= 0 and self.map.matrix[row - 1][col] == WALL)
+                or
+                (col - 1 >= 0 and self.map.matrix[row][col - 1] == WALL and col + 1 < numCols and self.map.matrix[row][col + 1] == WALL and row + 1 < numRows and self.map.matrix[row + 1][col] == WALL)
+                or
+                (row == 0 and col - 1 >= 0 and self.map.matrix[row][col - 1] == WALL and row + 1 < numRows and self.map.matrix[row + 1][col] == WALL)
+                or
+                (row == 0 and col + 1 < numCols and self.map.matrix[row][col + 1] == WALL and row + 1 < numRows and self.map.matrix[row + 1][col] == WALL)
+                or
+                (row == numRows - 1 and col - 1 >= 0 and self.map.matrix[row][col - 1] == WALL and row - 1 >= 0 and self.map.matrix[row - 1][col] == WALL)
+                or
+                (row == numRows - 1 and col + 1 < numCols and self.map.matrix[row][col + 1] == WALL and row - 1 >= 0 and self.map.matrix[row - 1][col] == WALL)
+                or
+                (col == 0 and col + 1 < numCols and self.map.matrix[row][col + 1] == WALL and row + 1 < numRows and self.map.matrix[row + 1][col] == WALL)
+                or
+                (col == 0 and col + 1 < numCols and self.map.matrix[row][col + 1] == WALL and row - 1 >= 0 and self.map.matrix[row - 1][col] == WALL)
+                or 
+                (col == numCols - 1 and col - 1 >= 0 and self.map.matrix[row][col - 1] == WALL and row + 1 < numRows and self.map.matrix[row + 1][col] == WALL)
+                or
+                (col == numCols - 1 and col - 1 >= 0 and self.map.matrix[row][col - 1] == WALL and row - 1 >= 0 and self.map.matrix[row - 1][col] == WALL)
+                or
+                ((row, col) == (0, 0) and self.map.matrix[0][1] == WALL)
+                or
+                ((row, col) == (0, 0) and self.map.matrix[1][0] == WALL)
+                or
+                ((row, col) == (0, numCols - 1) and self.map.matrix[0][numCols - 2] == WALL)
+                or
+                ((row, col) == (0, numCols - 1) and self.map.matrix[1][numCols - 1] == WALL)
+                or
+                ((row, col) == (numRows - 1, 0) and self.map.matrix[numRows - 2][0] == WALL)
+                or
+                ((row, col) == (numRows - 1, 0) and self.map.matrix[numRows - 1][1] == WALL)
+                or
+                ((row, col) == (numRows - 1, numCols - 1) and self.map.matrix[numRows - 2][numCols - 1] == WALL)
+                or
+                ((row, col) == (numRows - 1, numCols - 1) and self.map.matrix[numRows - 1][numCols - 2] == WALL)
+            ):
+                return True
+            
+            return False
+        
         #! Add all unvisited wall intersections to a list
         unvisitedWallIntersections: list[tuple[tuple[int, int], int]] = []
         startPositionForFinding = None
@@ -855,19 +412,15 @@ class Level1:
         else:
             startPositionForFinding = self.goalPosition
         
-        minNumWalls = self.map.numRows * self.map.numCols
         for intersection in self.listWallIntersections:
             if (not self.visitedMatrix[intersection[0]][intersection[1]]):
                 numWalls = countNumWallsBetweenTwoPositions(startPositionForFinding, intersection)
                 unvisitedWallIntersections.append((intersection, numWalls))
                 
-                minNumWalls = min(numWalls, minNumWalls)
-                
         #! We will select wall intersections with the minimum num walls
         chosenWallIntersections: list[WallIntersection] = []
         for intersection in unvisitedWallIntersections:
-            if (intersection[1] == minNumWalls):
-                heappush(chosenWallIntersections, WallIntersection(intersection[0], startPositionForFinding, self.map.matrix, self.visitedMatrix))
+            heappush(chosenWallIntersections, WallIntersection(intersection[0], startPositionForFinding, self.map.matrix, self.visitedMatrix, intersection[1], checkCorner(intersection[0])))
         
         if (len(chosenWallIntersections) == 0):
             return None
@@ -911,7 +464,7 @@ class Level1:
     def seekerTakeTurn (self):
         self.seekerPosition = self.path[self.pathMove]
         self.pathMove = self.pathMove + 1
-        self.listObservableCells = self.getObservableCells()
+        self.listObservableCells = self.getObservableCells(self.seekerPosition)
         if (self.IdentifiedHider is not None):
             return
         else:
@@ -994,3 +547,45 @@ class Level1:
                         self.pathMove = 0
                     else:
                         raise Exception ("Your map is missing the hider")
+                    
+    def level1 (self):
+        """
+        This function is created for saving all essential things in level 1 for displaying on the game screen
+        It will return a list of things, each thing will encompass 5 things:
+            + The position of the seeker
+            + The position of the hider
+            + The current score of the game
+            + The list of cells that the seeker can observe at the current time
+            + The announcement that the hider broadcast (It can be None if it does not exist)
+        """
+        listThingsInLevel1 = []
+        listThingsInLevel1.append((self.seekerPosition, self.hiderPosition, self.score, self.listObservableCells, self.announcement))
+                
+        while (True):
+            if (self.takeTurn == SEEKER):
+                self.seekerTakeTurn()
+                self.takeTurn = HIDER
+                if (self.seekerPosition != self.hiderPosition):
+                    self.numSeekerSteps = self.numSeekerSteps + 1
+                    self.score = self.score - 1
+                else:
+                    self.score = self.score + 20
+                    break
+                
+                listThingsInLevel1.append((self.seekerPosition, self.hiderPosition, self.score, self.listObservableCells, self.announcement))
+            else:
+                self.hiderTakeTurn()
+                self.takeTurn = SEEKER
+                if (self.seekerPosition != self.hiderPosition):
+                    self.numHiderSteps = self.numHiderSteps + 1
+                    if (self.announcementTime is not None and self.announcementTime < 1):
+                        self.announcementTime = self.announcementTime + 1
+                    else:
+                        #! After 2 steps, the announcement disappears
+                        if (self.announcementTime is not None):
+                            self.announcement = None
+                            self.announcementTime = None
+                else:
+                    break
+        
+        return listThingsInLevel1
