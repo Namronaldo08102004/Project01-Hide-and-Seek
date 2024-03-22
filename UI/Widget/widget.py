@@ -191,7 +191,7 @@ class Image(Widget):
         )
 
 
-class Map(Widget):
+class MapWidget(Widget):
     def __init__(
         self, mp: list[int], level=1, position=Vector2(0, 0), size=Vector2(0, 0)
     ):
@@ -215,7 +215,7 @@ class Map(Widget):
                     case 3:
                         color = SEEKERC
                     case 4:
-                        pass
+                        color = OBSERVABLEC
                     case 5:
                         color = OBSTACLEC
                     case _:

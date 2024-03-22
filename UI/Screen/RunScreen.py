@@ -51,7 +51,7 @@ class RunScreen(Screen):
                 )
                 self.widgets.add(but)
         if self.select != -1 and self.cur_map:
-            mp = Map(self.cur_map, self.level)
+            mp = MapWidget(self.cur_map, self.level)
             self.widgets.add(mp)
             if not self.drop_open:
                 start = Button(
@@ -80,26 +80,24 @@ class RunScreen(Screen):
         self.drop_open = False
         self.select = i + 1
 
-    def A_star(self):
-        # self.moves = ["d", "d", "d", "d", "d", "d", "d", "d", "d", "d", "r", "r"]
-        self.moves = ["d"]
-
     # hàm này nó sẽ gọi khi bấm nút start
     # Data hiện đag có sẽ là level và cái map đã đọc sẵn theo format 1, 2, 3, 4, 5
     def begin_move(self):
         # A_star: t đag thí dụ nó trả cho m cái path của thg seeker là self.moves
-        self.A_star()
+        # self.moves = self.A_star()
+        self.moves = ["d", "d", "d", "d", "d", "d", "d", "d", "d", "d", "d", "d"]
         score: int = 0
         for mv in self.moves:
             score -= 1
-            
+
             # nó lấy vị trí
             hider_pos = find_entity(self.cur_map, 2)
             seeker_pos = find_entity(self.cur_map, 3)[0]
-            
+
             # di chuyển nè
             self.cur_map = moveTiles(mp=self.cur_map, mv=mv, loc=seeker_pos)
-            mp = Map(self.cur_map, self.level)
+
+            mp = MapWidget(self.cur_map, self.level)
             mp.__render__(self.display)
             txt = Text(
                 text=f"Score: {score}",
@@ -111,12 +109,12 @@ class RunScreen(Screen):
             txt.__render__(self.display)
             # print(str(self.widgets))
             self.widgets.pop("Text")
-            self.widgets.pop("Map")
+            self.widgets.pop("MapWidget")
 
             self.widgets.add(txt)
             self.widgets.add(mp)
             # print(str(self.widgets))
-            
+
             # In lại ra màn hình
             self.widgets.__render__(self.display)
             pygame.display.flip()
