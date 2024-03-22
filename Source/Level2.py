@@ -500,7 +500,8 @@ class Level2 (Level):
                     correspondingHiders = self.announcementDict[announcement]
                     
                     for correspondingHider in correspondingHiders:
-                        listCorrespondingHiders.append(Hider(correspondingHider, self.seekerPosition, self.map.matrix, self.visitedMatrix))
+                        if (not self.visitedMatrix[correspondingHider[0]][correspondingHider[1]]):
+                            listCorrespondingHiders.append(Hider(correspondingHider, self.seekerPosition, self.map.matrix, self.visitedMatrix))
                         
                 self.listIdentifiedHiders = list(set(self.listIdentifiedHiders).union(set(listCorrespondingHiders)))
             
@@ -519,7 +520,8 @@ class Level2 (Level):
                     correspondingHiders = self.announcementDict[announcement]
                     
                     for correspondingHider in correspondingHiders:
-                        listCorrespondingHiders.append(Hider(correspondingHider, self.seekerPosition, self.map.matrix, self.visitedMatrix))
+                        if (not self.visitedMatrix[correspondingHider[0]][correspondingHider[1]]):
+                            listCorrespondingHiders.append(Hider(correspondingHider, self.seekerPosition, self.map.matrix, self.visitedMatrix))
                         
                 self.listIdentifiedHiders = list(set(self.listIdentifiedHiders).union(set(listCorrespondingHiders)))
         
@@ -615,45 +617,3 @@ class Level2 (Level):
                         self.pathMove = 0
                     else:
                         raise Exception ("Your map is missing the hider")
-                    
-    # def level2 (self):
-    #     """
-    #     This function is created for saving all essential things in level 1 for displaying on the game screen
-    #     It will return a list of things, each thing will encompass 5 things:
-    #         + The position of the seeker
-    #         + The position of the hider
-    #         + The current score of the game
-    #         + The list of cells that the seeker can observe at the current time
-    #         + The announcement that the hider broadcast (It can be None if it does not exist)
-    #     """
-    #     listThingsInLevel1 = []
-    #     listThingsInLevel1.append((self.seekerPosition, self.hiderPosition, self.score, self.listObservableCells, self.announcement))
-                
-    #     while (True):
-    #         if (self.takeTurn == SEEKER):
-    #             self.seekerTakeTurn()
-    #             self.takeTurn = HIDER
-    #             if (self.seekerPosition != self.hiderPosition):
-    #                 self.numSeekerSteps = self.numSeekerSteps + 1
-    #                 self.score = self.score - 1
-    #             else:
-    #                 self.score = self.score + 20
-    #                 break
-                
-    #             listThingsInLevel1.append((self.seekerPosition, self.hiderPosition, self.score, self.listObservableCells, self.announcement))
-    #         else:
-    #             self.hiderTakeTurn()
-    #             self.takeTurn = SEEKER
-    #             if (self.seekerPosition != self.hiderPosition):
-    #                 self.numHiderSteps = self.numHiderSteps + 1
-    #                 if (self.announcementTime is not None and self.announcementTime < 1):
-    #                     self.announcementTime = self.announcementTime + 1
-    #                 else:
-    #                     #! After 2 steps, the announcement disappears
-    #                     if (self.announcementTime is not None):
-    #                         self.announcement = None
-    #                         self.announcementTime = None
-    #             else:
-    #                 break
-        
-    #     return listThingsInLevel1

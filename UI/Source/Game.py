@@ -423,6 +423,7 @@ while True:
                                 
                         pygame.display.flip()
                         
+                        tempListHiderPositions = game.listHiderPositions.copy()
                         game.seekerTakeTurn()
                         
                         #! Draw the current position of the seeker
@@ -447,7 +448,7 @@ while True:
                         pygame.display.flip()
                         
                         game.takeTurn = HIDER
-                        if (len(game.listHiderPositions) != 0 and game.seekerPosition not in game.listHiderPositions):
+                        if (len(game.listHiderPositions) != 0 and game.seekerPosition not in tempListHiderPositions):
                             game.numSeekerSteps = game.numSeekerSteps + 1
                             game.score = game.score - 1
                         else:

@@ -48,7 +48,7 @@ class Level:
                     for col in range (hiderPosition[1] - level, hiderPosition[1] + level + 1):
                         if (col >= 0 and col < self.map.numCols and (row, col) != hiderPosition):
                             listPositions.append((row, col))
-                    
+        
         randomPosition = choice(listPositions)
         return randomPosition
     
