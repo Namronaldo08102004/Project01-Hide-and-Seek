@@ -1,36 +1,23 @@
-from Level_util import *
-
-class Hider:
-    def __init__ (self, state: tuple[int, int], startPosition: tuple[int, int], map, visitedMatrix):
-        self.state = state
-        self.startPosition = startPosition
-        self.map = map
-        self.visitedMatrix = visitedMatrix
-        
-    def __lt__ (self, other):
-        goal1 = A_Star(self.startPosition, self.state, self.map, self.visitedMatrix)
-        goal2 = A_Star(self.startPosition, other.state, self.map, self.visitedMatrix)
-        shortestPath1 = []
-        shortestPath2 = []
-        
-        while (goal1 is not None):
-            shortestPath1.append(goal1.state)
-            goal1 = goal1.parent
-        while (goal2 is not None):
-            shortestPath2.append(goal2.state)
-            goal2 = goal2.parent
-        
-        return len(shortestPath1) < len(shortestPath2)
-    
-    def __eq__ (self, other):
-        return self.state == other.state
-    
-    def __hash__ (self):
-        return hash(self.state)
-
-class Level2 (Level):
+from Source.Level_util import *
+class Level1 (Level):
     """
-        Our strategy for level 2 is same with level 1
+        Our strategy for level 1 is sequentialy finding each wall intersection in the map.
+        When reached a certain wall intersection:
+            + If there is not hider around this wall position, we will move to the next nearest wall intersection.
+            + If there is hider, conduct to touch that hider.
+        Through the process of moving among other wall intersections, we keep a matrix for checking visited cells which are
+        identified to not include hider, and we hope that we can find the hider through the process
+        If there is not any hiders found, we will check unvisited cells and move sequentially to each cell in the order from nearest
+        to furtherest.
+        
+        A wall intersection is demonstrated by the following image:
+         ------ ------
+        |      |      |
+        |      |      |
+         ------ ------
+        |      | <----
+        |      | 
+         ------
     """ 
     def __init__ (self, map: Map):
         Level.__init__ (self, map)
@@ -91,29 +78,29 @@ class Level2 (Level):
                     if (col + 1 < self.map.numCols and self.map.matrix[row][col + 1] != WALL):
                         self.listWallIntersections.append((row, col + 1))
         
-        #! Define seeker and hiders for the game
+        #! Define seeker and hider for the game
         self.seekerPosition: tuple[int, int] = map.seekerPosition
-        self.listHiderPositions: list[tuple[int, int]] = map.listHiderPositions.copy()
-        
         self.listObservableCells: list[tuple[int, int]] = self.getObservableCells(self.seekerPosition)
-        self.listIdentifiedHiders: list[Hider] = self.identifyObservableHiders()
+        self.IdentifiedHider: tuple[int, int] = self.identifyObservableHider()
+        self.IdentifiedAnnouncement: tuple[int, int] = None
+        self.listUnvisitedPositionsAroundAnnouncement: list[tuple[int, int]] = None
         
+        self.hiderPosition: tuple[int, int] = map.listHiderPositions[0]
+            
         #? Announcement will be broadcast by hider after each 8 steps and will exist in 2 steps
-        """
-        We create a dictionary of broadcast announcements
-            + Key is the position of a certain announcement
-            + Value is the position of the hider who broadcast that announcement 
-        """
-        self.announcementDict: dict[tuple[int, int], list[tuple[int, int]]] = dict()
+        self.announcement: tuple[int, int] = None
+        self.announcementTime: int = None
         
         #! Get the goal position for the next move
         self.goalPosition: tuple[int, int] = None
         self.path: list[tuple[int, int]] = None
         self.pathMove: int = 0
-        if (len(self.listIdentifiedHiders) != 0):
-            goal = heappop(self.listIdentifiedHiders)
-            self.goalPosition = goal.state
-            heappush(self.listIdentifiedHiders, goal)
+        if (self.IdentifiedHider is not None):
+            self.goalPosition = self.IdentifiedHider
+            self.path = self.getShortestPath(self.goalPosition)
+            self.pathMove = 0
+        elif (self.IdentifiedHider is None and self.IdentifiedAnnouncement is not None):
+            self.goalPosition = self.IdentifiedAnnouncement
             self.path = self.getShortestPath(self.goalPosition)
             self.pathMove = 0
         else:
@@ -121,16 +108,13 @@ class Level2 (Level):
             self.path: list[tuple[int, int]] = self.getShortestPath(self.goalPosition)
             self.pathMove: int = 0
             
-    def hiderTakeTurn (self, hiderPosition: tuple[int, int]):
+    def hiderTakeTurn (self):
         if (self.numHiderSteps % 8 != 7):
             return
         
         #! The hider will broadcast an announcement after each 8 steps and set the time for this announcement
-        announcement = self.broadcastAnnouncement(hiderPosition)
-        if (self.announcementDict.get(announcement) is None):
-            self.announcementDict[announcement] = [hiderPosition]
-        else:
-            self.announcementDict[announcement].append(hiderPosition)
+        self.announcement = self.broadcastAnnouncement(self.hiderPosition)
+        self.announcementTime = 0
     
     def getNearestWallIntersection (self) -> tuple[int, int]:
         def countNumWallsBetweenTwoPositions (position1: tuple[int, int], position2: tuple[int, int]):
@@ -458,130 +442,77 @@ class Level2 (Level):
         
         return shortestPath
     
-    def identifyObservableHiders (self):
-        listHiderPositions: list[Hider] = []
+    def identifyObservableHider (self):
+        Position: tuple[int, int] = None
         
         for i in range (0, len(self.listObservableCells)):
-            if (self.listObservableCells[i] in self.listHiderPositions):
-                heappush(listHiderPositions, Hider(self.listObservableCells[i], self.seekerPosition, self.map.matrix, self.visitedMatrix))
+            if (self.map.matrix[self.listObservableCells[i][0]][self.listObservableCells[i][1]] == HIDER):
+                Position = self.listObservableCells[i]
             else:
                 self.visitedMatrix[self.listObservableCells[i][0]][self.listObservableCells[i][1]] = True
                 
-        return listHiderPositions
+        return Position
     
-    def identifyObservableAnnouncements (self):
-        listAnnouncementPositions: list[tuple[int, int]] = []
-        
+    def identifyObservableAnnouncement (self):
         for i in range (0, len(self.listObservableCells)):
-            if (self.announcementDict.get(self.listObservableCells[i]) is not None):
-                listAnnouncementPositions.append(self.listObservableCells[i])
+            if (self.announcement is not None and self.listObservableCells[i] == self.announcement):
+                return self.listObservableCells[i]
             
-        return listAnnouncementPositions
+        return None
     
     def seekerTakeTurn (self):
-        def checkGoalPositionInListIdentifiedHiders (goalPosition: tuple[int, int], listIdentifiedHiders: list[Hider]):
-            for hider in listIdentifiedHiders:
-                if goalPosition == hider.state:
-                    return True
-            
-            return False
-        
         self.seekerPosition = self.path[self.pathMove]
         self.pathMove = self.pathMove + 1
         self.listObservableCells = self.getObservableCells(self.seekerPosition)
-        
-        if (len(self.listIdentifiedHiders) != 0):
-            tempListIdentifiedHiders = self.identifyObservableHiders()
-            listIdentifiedAnnouncements = self.identifyObservableAnnouncements()
-            
-            if (listIdentifiedAnnouncements):
-                listCorrespondingHiders: list[Hider] = []
-                for announcement in listIdentifiedAnnouncements:
-                    correspondingHiders = self.announcementDict[announcement]
-                    
-                    for correspondingHider in correspondingHiders:
-                        listCorrespondingHiders.append(Hider(correspondingHider, self.seekerPosition, self.map.matrix, self.visitedMatrix))
-                        
-                self.listIdentifiedHiders = list(set(self.listIdentifiedHiders).union(set(listCorrespondingHiders)))
-            
-            #! Get the union of the old list of identified hiders and the new one
-            self.listIdentifiedHiders = list(set(self.listIdentifiedHiders).union(set(tempListIdentifiedHiders)))
-            
-            if (self.seekerPosition != self.goalPosition):
-                return
+        if (self.IdentifiedHider is not None):
+            return
         else:
-            self.listIdentifiedHiders = self.identifyObservableHiders()
-            listIdentifiedAnnouncements = self.identifyObservableAnnouncements()
+            self.IdentifiedHider = self.identifyObservableHider()
             
-            if (listIdentifiedAnnouncements):
-                listCorrespondingHiders: list[Hider] = []
-                for announcement in listIdentifiedAnnouncements:
-                    correspondingHiders = self.announcementDict[announcement]
-                    
-                    for correspondingHider in correspondingHiders:
-                        listCorrespondingHiders.append(Hider(correspondingHider, self.seekerPosition, self.map.matrix, self.visitedMatrix))
-                        
-                self.listIdentifiedHiders = list(set(self.listIdentifiedHiders).union(set(listCorrespondingHiders)))
+        if (self.IdentifiedAnnouncement is None):
+            self.IdentifiedAnnouncement = self.identifyObservableAnnouncement()
         
-        #! Observed any hider --> Conduct to touch that hider
-        if (len(self.listIdentifiedHiders) != 0 and not checkGoalPositionInListIdentifiedHiders(self.goalPosition, self.listIdentifiedHiders)):
-            goal = heappop(self.listIdentifiedHiders)
-            self.goalPosition = goal.state
-            heappush(self.listIdentifiedHiders, goal)
+        #! Observed hider --> Conduct to touch the hider
+        if (self.IdentifiedHider is not None and self.goalPosition != self.IdentifiedHider):
+            self.goalPosition = self.IdentifiedHider
+            self.path = self.getShortestPath(self.goalPosition)
+            self.pathMove = 0
+            return
+        
+        #! Observed an announcement while not observing the hider or observed an announcement before --> Conduct to move to the position of that announcement
+        if (self.IdentifiedHider is None and self.listUnvisitedPositionsAroundAnnouncement is None and 
+            self.IdentifiedAnnouncement is not None and self.goalPosition != self.IdentifiedAnnouncement):
+            self.goalPosition = self.IdentifiedAnnouncement
             self.path = self.getShortestPath(self.goalPosition)
             self.pathMove = 0
             return
         
         if (self.seekerPosition == self.goalPosition or self.visitedMatrix[self.goalPosition[0]][self.goalPosition[1]]):
-            self.visitedMatrix[self.goalPosition[0]][self.goalPosition[1]] = True
-            #! Reached the position of the hider
-            if (len(self.listIdentifiedHiders) != 0 and checkGoalPositionInListIdentifiedHiders(self.goalPosition, self.listIdentifiedHiders)):
-                _ = heappop(self.listIdentifiedHiders)
-                self.listHiderPositions.remove(self.goalPosition)
+            #! Reached the position of the hider -> Stop
+            if (self.IdentifiedHider is not None):
+                return
+            #! Reached the position of the announcement -> Get unvisited positions in the radius of 3 around this announcement.
+            elif (self.listUnvisitedPositionsAroundAnnouncement is None and self.IdentifiedAnnouncement is not None): 
+                listUnvisitedPositions = []
                 
-                if (len(self.listHiderPositions) == 0):
-                    return
-                
-                if (len(self.listIdentifiedHiders) != 0):
-                    goal = heappop(self.listIdentifiedHiders)
-                    self.goalPosition = goal.state
-                    heappush(self.listIdentifiedHiders, goal)
-                    self.path = self.getShortestPath(self.goalPosition)
-                    self.pathMove = 0
-                else:
-                    self.goalPosition = self.getNearestWallIntersection()
-                    if (self.goalPosition is not None):
-                        self.path = self.getShortestPath(self.goalPosition)
-                        self.pathMove = 0
-                    else:
-                        level = 1
-                        found = False
-                        maxLevel = max(self.seekerPosition[0], max(self.map.numRows - 1 - self.seekerPosition[0], max(self.seekerPosition[1], self.map.numCols - 1 - self.seekerPosition[1])))
-                        
-                        while (not found and level <= maxLevel):
-                            for row in range (self.seekerPosition[0] - level, self.seekerPosition[0] + level + 1):
-                                if (row >= 0 and row < self.map.numRows):
-                                    for col in range (self.seekerPosition[1] - level, self.seekerPosition[1] + level + 1):
-                                        if (col >= 0 and col < self.map.numCols):
-                                            if (not self.visitedMatrix[row][col]):
-                                                self.goalPosition = (row, col)
-                                                found = True
-                                                break
-                                
-                                if (found):
-                                    break
-                            
-                            if (found):
-                                break
-                    
-                            level = level + 1
-                            
-                        if (self.goalPosition is not None):
-                            self.path = self.getShortestPath(self.goalPosition)
-                            self.pathMove = 0
-                        else:
-                            raise Exception ("Your map is missing the hider")
-                             
+                for level in range (1, 3):
+                    for row in range (self.IdentifiedAnnouncement[0] - level, self.IdentifiedAnnouncement[0] + level + 1):
+                        if (row >= 0 and row < self.map.numRows):
+                            for col in range (self.IdentifiedAnnouncement[1] - level, self.IdentifiedAnnouncement[1] + level + 1):
+                                if (col >= 0 and col < self.map.numCols and not self.visitedMatrix[row][col] and self.IdentifiedAnnouncement != (row, col)):
+                                    listUnvisitedPositions.append((row, col))
+
+                self.listUnvisitedPositionsAroundAnnouncement = listUnvisitedPositions.copy()
+                self.goalPosition = self.listUnvisitedPositionsAroundAnnouncement[0]
+                self.listUnvisitedPositionsAroundAnnouncement = self.listUnvisitedPositionsAroundAnnouncement[1:]
+                self.path = self.getShortestPath(self.goalPosition)
+                self.pathMove = 0
+            #! Reached one unvisited position in the radius of 3 around the old announcement
+            elif (self.listUnvisitedPositionsAroundAnnouncement is not None and len(self.listUnvisitedPositionsAroundAnnouncement) != 0):
+                self.goalPosition = self.listUnvisitedPositionsAroundAnnouncement[0]
+                self.listUnvisitedPositionsAroundAnnouncement = self.listUnvisitedPositionsAroundAnnouncement[1:]
+                self.path = self.getShortestPath(self.goalPosition)
+                self.pathMove = 0          
             else:
                 self.goalPosition = self.getNearestWallIntersection()
                 if (self.goalPosition is not None):
@@ -616,44 +547,47 @@ class Level2 (Level):
                     else:
                         raise Exception ("Your map is missing the hider")
                     
-    # def level2 (self):
-    #     """
-    #     This function is created for saving all essential things in level 1 for displaying on the game screen
-    #     It will return a list of things, each thing will encompass 5 things:
-    #         + The position of the seeker
-    #         + The position of the hider
-    #         + The current score of the game
-    #         + The list of cells that the seeker can observe at the current time
-    #         + The announcement that the hider broadcast (It can be None if it does not exist)
-    #     """
-    #     listThingsInLevel1 = []
-    #     listThingsInLevel1.append((self.seekerPosition, self.hiderPosition, self.score, self.listObservableCells, self.announcement))
+    def level1 (self):
+        """
+        This function is created for saving all essential things in level 1 for displaying on the game screen
+        It will return a list of things, each thing will encompass 5 things:
+            + The position of the seeker
+            + The position of the hider
+            + The current score of the game
+            + The list of cells that the seeker can observe at the current time
+            + The announcement that the hider broadcast (It can be None if it does not exist)
+        """
+        listThingsInLevel1 = []
+        listThingsInLevel1.append((self.seekerPosition, self.hiderPosition, self.score, self.listObservableCells, self.announcement))
+        yield listThingsInLevel1[-1]
                 
-    #     while (True):
-    #         if (self.takeTurn == SEEKER):
-    #             self.seekerTakeTurn()
-    #             self.takeTurn = HIDER
-    #             if (self.seekerPosition != self.hiderPosition):
-    #                 self.numSeekerSteps = self.numSeekerSteps + 1
-    #                 self.score = self.score - 1
-    #             else:
-    #                 self.score = self.score + 20
-    #                 break
-                
-    #             listThingsInLevel1.append((self.seekerPosition, self.hiderPosition, self.score, self.listObservableCells, self.announcement))
-    #         else:
-    #             self.hiderTakeTurn()
-    #             self.takeTurn = SEEKER
-    #             if (self.seekerPosition != self.hiderPosition):
-    #                 self.numHiderSteps = self.numHiderSteps + 1
-    #                 if (self.announcementTime is not None and self.announcementTime < 1):
-    #                     self.announcementTime = self.announcementTime + 1
-    #                 else:
-    #                     #! After 2 steps, the announcement disappears
-    #                     if (self.announcementTime is not None):
-    #                         self.announcement = None
-    #                         self.announcementTime = None
-    #             else:
-    #                 break
+        while (True):
+            if (self.takeTurn == SEEKER):
+                self.seekerTakeTurn()
+                self.takeTurn = HIDER
+                if (self.seekerPosition != self.hiderPosition):
+                    self.numSeekerSteps = self.numSeekerSteps + 1
+                    self.score = self.score - 1
+                    listThingsInLevel1.append((self.seekerPosition, self.hiderPosition, self.score, self.listObservableCells, self.announcement))
+                    yield listThingsInLevel1[-1]
+                else:
+                    self.score = self.score + 20
+                    listThingsInLevel1.append((self.seekerPosition, self.hiderPosition, self.score, self.listObservableCells, self.announcement))
+                    yield listThingsInLevel1[-1]
+                    break
+            else:
+                self.hiderTakeTurn()
+                self.takeTurn = SEEKER
+                if (self.seekerPosition != self.hiderPosition):
+                    self.numHiderSteps = self.numHiderSteps + 1
+                    if (self.announcementTime is not None and self.announcementTime < 1):
+                        self.announcementTime = self.announcementTime + 1
+                    else:
+                        #! After 2 steps, the announcement disappears
+                        if (self.announcementTime is not None):
+                            self.announcement = None
+                            self.announcementTime = None
+                else:
+                    break
         
-    #     return listThingsInLevel1
+        return None

@@ -4,7 +4,7 @@ from Screen.Screen import Screen
 from Utils.getMap import *
 from Utils.move import *
 from Widget.widget import *
-from Widget.widget import Button
+from Source.Level1 import *
 
 
 class RunScreen(Screen):
@@ -83,39 +83,52 @@ class RunScreen(Screen):
     # hàm này nó sẽ gọi khi bấm nút start
     # Data hiện đag có sẽ là level và cái map đã đọc sẵn theo format 1, 2, 3, 4, 5
     def begin_move(self):
-        # A_star: t đag thí dụ nó trả cho m cái path của thg seeker là self.moves
-        # self.moves = self.A_star()
-        self.moves = ["d", "d", "d", "d", "d", "d", "d", "d", "d", "d", "d", "d"]
-        score: int = 0
-        for mv in self.moves:
-            score -= 1
+        game = None
+        if (self.level == 1):
+            map = Map(self.cur_map)
+            game = Level1(map)
+            
+            listThings = game.level1()
+            first = next(listThings)
+            
+            for thing in listThings:
+                score = thing[2]
+                seeker_pos = thing[0]
+                
+                # nó sẽ lấy hướng đi
+                direction = getDirection(first[0], seeker_pos)
+                
+                # di chuyển
+                self.cur_map = moveTiles(mp=self.cur_map, mv=direction, loc=first[0])
+                
+                # in ra màn hình
+                self.printMap(score)
+                
+                # cập nhật lại first
+                first = thing
+        else:
+            return
+    
+    def printMap (self, score):
+        mp = MapWidget(self.cur_map, self.level)
+        mp.__render__(self.display)
+        txt = Text(
+            text=f"Score: {score}",
+            position=Vector2(WIDTH // 2 + 300, HEIGHT // 2 + 200),
+            size=Vector2(120, 50),
+            color=BLACK,
+            font_size=26,
+        )
+        txt.__render__(self.display)
+        # print(str(self.widgets))
+        self.widgets.pop("Text")
+        self.widgets.pop("MapWidget")
 
-            # nó lấy vị trí
-            hider_pos = find_entity(self.cur_map, 2)
-            seeker_pos = find_entity(self.cur_map, 3)[0]
+        self.widgets.add(txt)
+        self.widgets.add(mp)
+        # print(str(self.widgets))
 
-            # di chuyển nè
-            self.cur_map = moveTiles(mp=self.cur_map, mv=mv, loc=seeker_pos)
-
-            mp = MapWidget(self.cur_map, self.level)
-            mp.__render__(self.display)
-            txt = Text(
-                text=f"Score: {score}",
-                position=Vector2(WIDTH // 2 + 300, HEIGHT // 2 + 200),
-                size=Vector2(120, 50),
-                color=BLACK,
-                font_size=26,
-            )
-            txt.__render__(self.display)
-            # print(str(self.widgets))
-            self.widgets.pop("Text")
-            self.widgets.pop("MapWidget")
-
-            self.widgets.add(txt)
-            self.widgets.add(mp)
-            # print(str(self.widgets))
-
-            # In lại ra màn hình
-            self.widgets.__render__(self.display)
-            pygame.display.flip()
-            pygame.time.wait(DELAY_TIME)
+        # In lại ra màn hình
+        self.widgets.__render__(self.display)
+        pygame.display.flip()
+        pygame.time.wait(DELAY_TIME)
