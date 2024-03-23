@@ -414,7 +414,11 @@ class Level1 (Level):
         
         for intersection in self.listWallIntersections:
             if (not self.visitedMatrix[intersection[0]][intersection[1]]):
+                listObservableCells = self.getObservableCells(intersection)
+                
                 numWalls = countNumWallsBetweenTwoPositions(startPositionForFinding, intersection)
+                for cell in listObservableCells:
+                    numWalls = min(countNumWallsBetweenTwoPositions(startPositionForFinding, cell), numWalls)
                 unvisitedWallIntersections.append((intersection, numWalls))
                 
         #! We will select wall intersections with the minimum num walls

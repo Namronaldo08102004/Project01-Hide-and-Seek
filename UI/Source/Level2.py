@@ -429,7 +429,11 @@ class Level2 (Level):
         
         for intersection in self.listWallIntersections:
             if (not self.visitedMatrix[intersection[0]][intersection[1]]):
+                listObservableCells = self.getObservableCells(intersection)
+                
                 numWalls = countNumWallsBetweenTwoPositions(startPositionForFinding, intersection)
+                for cell in listObservableCells:
+                    numWalls = min(countNumWallsBetweenTwoPositions(startPositionForFinding, cell), numWalls)
                 unvisitedWallIntersections.append((intersection, numWalls))
                 
         #! We will select wall intersections with the minimum num walls
@@ -500,7 +504,8 @@ class Level2 (Level):
                     correspondingHiders = self.announcementDict[announcement]
                     
                     for correspondingHider in correspondingHiders:
-                        listCorrespondingHiders.append(Hider(correspondingHider, self.seekerPosition, self.map.matrix, self.visitedMatrix))
+                        if (not self.visitedMatrix[correspondingHider[0]][correspondingHider[1]]):
+                            listCorrespondingHiders.append(Hider(correspondingHider, self.seekerPosition, self.map.matrix, self.visitedMatrix))
                         
                 self.listIdentifiedHiders = list(set(self.listIdentifiedHiders).union(set(listCorrespondingHiders)))
             
@@ -519,7 +524,8 @@ class Level2 (Level):
                     correspondingHiders = self.announcementDict[announcement]
                     
                     for correspondingHider in correspondingHiders:
-                        listCorrespondingHiders.append(Hider(correspondingHider, self.seekerPosition, self.map.matrix, self.visitedMatrix))
+                        if (not self.visitedMatrix[correspondingHider[0]][correspondingHider[1]]):
+                            listCorrespondingHiders.append(Hider(correspondingHider, self.seekerPosition, self.map.matrix, self.visitedMatrix))
                         
                 self.listIdentifiedHiders = list(set(self.listIdentifiedHiders).union(set(listCorrespondingHiders)))
         
