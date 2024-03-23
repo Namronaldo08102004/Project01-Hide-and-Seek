@@ -98,15 +98,15 @@ class Level1 (Level):
         self.pathMove: int = 0
         if (self.IdentifiedHider is not None):
             self.goalPosition = self.IdentifiedHider
-            self.path = self.getShortestPath(self.goalPosition)
+            self.path = self.getShortestPath(self.seekerPosition, self.goalPosition)
             self.pathMove = 0
         elif (self.IdentifiedHider is None and self.IdentifiedAnnouncement is not None):
             self.goalPosition = self.IdentifiedAnnouncement
-            self.path = self.getShortestPath(self.goalPosition)
+            self.path = self.getShortestPath(self.seekerPosition, self.goalPosition)
             self.pathMove = 0
         else:
             self.goalPosition: tuple[int, int] = self.getNearestWallIntersection()
-            self.path: list[tuple[int, int]] = self.getShortestPath(self.goalPosition)
+            self.path: list[tuple[int, int]] = self.getShortestPath(self.seekerPosition, self.goalPosition)
             self.pathMove: int = 0
             
     def hiderTakeTurn (self):
@@ -421,23 +421,27 @@ class Level1 (Level):
                     numWalls = min(countNumWallsBetweenTwoPositions(startPositionForFinding, cell), numWalls)
                 unvisitedWallIntersections.append((intersection, numWalls))
                 
-        chosenWallIntersections: list[WallIntersection] = []
+        nearestWallIntersection: tuple[int, int] = None
         minHeuristic = 1000000000
+        AStar = None
         for intersection in unvisitedWallIntersections:
             isCorner = checkCorner(intersection[0])
             if (intersection[1] - 0.9 * isCorner < minHeuristic):
-                heappush(chosenWallIntersections, WallIntersection(intersection[0], startPositionForFinding, self.map.matrix, self.visitedMatrix, intersection[1], isCorner))
+                nearestWallIntersection = intersection[0]
+                shorestPath = self.getShortestPath(startPositionForFinding, nearestWallIntersection)
+                AStar = len(shorestPath)
+                minHeuristic = intersection[1] - 0.9 * isCorner
+            elif (intersection[1] - 0.9 * isCorner == minHeuristic):
+                shorestPath = self.getShortestPath(startPositionForFinding, intersection[0])
+                if (AStar is None or (AStar is not None and len(shorestPath) < AStar)):
+                    nearestWallIntersection = intersection[0]
+                    AStar = len(shorestPath)
         
-        if (len(chosenWallIntersections) == 0):
-            return None
-          
-        #! Choose a wall intersection with the smallest optimal path cost from the current seeker position
-        intersection = heappop(chosenWallIntersections)
-        return intersection.state
+        return nearestWallIntersection
             
-    def getShortestPath (self, goalPosition: tuple[int, int]) -> list[tuple[int, int]]:
+    def getShortestPath (self, startPosition: tuple[int, int], goalPosition: tuple[int, int]) -> list[tuple[int, int]]:
         #! Be sure that the path will be from the next step of the start position to the goal position
-        goal = A_Star(self.seekerPosition, goalPosition, self.map.matrix, self.visitedMatrix)
+        goal = A_Star(startPosition, goalPosition, self.map.matrix, self.visitedMatrix)
         shortestPath = []
         
         while (goal is not None):
@@ -484,7 +488,7 @@ class Level1 (Level):
         #! Observed hider --> Conduct to touch the hider
         if (self.IdentifiedHider is not None and self.goalPosition != self.IdentifiedHider):
             self.goalPosition = self.IdentifiedHider
-            self.path = self.getShortestPath(self.goalPosition)
+            self.path = self.getShortestPath(self.seekerPosition, self.goalPosition)
             self.pathMove = 0
             return
         
@@ -495,7 +499,7 @@ class Level1 (Level):
             else:
                 self.goalPosition = self.getNearestWallIntersection()
                 if (self.goalPosition is not None):
-                    self.path = self.getShortestPath(self.goalPosition)
+                    self.path = self.getShortestPath(self.seekerPosition, self.goalPosition)
                     self.pathMove = 0
                 else:
                     level = 1
@@ -521,7 +525,7 @@ class Level1 (Level):
                         level = level + 1
                         
                     if (self.goalPosition is not None):
-                        self.path = self.getShortestPath(self.goalPosition)
+                        self.path = self.getShortestPath(self.seekerPosition, self.goalPosition)
                         self.pathMove = 0
                     else:
                         raise Exception ("Your map is missing the hider")

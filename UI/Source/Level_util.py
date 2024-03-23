@@ -1,35 +1,6 @@
 from Source.Map import *
 from random import choice
 from Source.A_Star import *
-
-class WallIntersection:
-    def __init__ (self, state: tuple[int, int], startPosition: tuple[int, int], map, visitedMatrix, numWalls, isCorner):
-        self.state = state
-        self.startPosition = startPosition
-        self.map = map
-        self.visitedMatrix = visitedMatrix
-        self.numWalls = numWalls
-        self.isCorner = isCorner
-        
-        self.f = self.numWalls - 0.9 * self.isCorner
-        
-    def __lt__ (self, other):
-        if (self.f == other.f):
-            goal1 = A_Star(self.startPosition, self.state, self.map, self.visitedMatrix)
-            goal2 = A_Star(self.startPosition, other.state, self.map, self.visitedMatrix)
-            shortestPath1 = []
-            shortestPath2 = []
-            
-            while (goal1 is not None):
-                shortestPath1.append(goal1.state)
-                goal1 = goal1.parent
-            while (goal2 is not None):
-                shortestPath2.append(goal2.state)
-                goal2 = goal2.parent
-            
-            return len(shortestPath1) < len(shortestPath2)
-        
-        return self.f < other.f
     
 class Level:
     def __init__ (self, map: Map):
