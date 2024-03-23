@@ -61,7 +61,7 @@ class Level:
             
                 for col in range (seekerPosition[1] - 3, seekerPosition[1] + 4):
                     if (col >= 0 and col < self.map.numCols):
-                        if (self.map.matrix[row][col] == WALL):
+                        if (self.map.matrix[row][col] in [WALL, OBSTACLE]):
                             tempList.append(False)
                         else:
                             tempList.append(True)
