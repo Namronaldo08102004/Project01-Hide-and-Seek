@@ -77,8 +77,8 @@ class DisplayMap:
         
     def runLevel2 (self):
         map = Map(self.cur_map)
-        if (len(map.listHiderPositions) < 2):
-                raise Exception("This is not a map for Level 2")
+        # if (len(map.listHiderPositions) < 2):
+        #         raise Exception("This is not a map for Level 2")
         
         game = Level2(map)
 

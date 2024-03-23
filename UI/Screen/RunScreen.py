@@ -19,7 +19,8 @@ class RunScreen(Screen):
         super().__initiate__()
         self.drop_open = False
         self.select = -1
-        self.available_maps = list_map("Maps")
+        self.file_path = "Maps/" + ("Single_Hider" if self.level == 1 else "Multi_Hiders")
+        self.available_maps = list_map(self.file_path)
         self.cur_map = None
         self.__update__(pygame.event.Event(pygame.NOEVENT))
 
@@ -86,7 +87,7 @@ class RunScreen(Screen):
         self.drop_open = not self.drop_open
 
     def load_map(self, i):
-        self.cur_map = read_map(f"Maps/{self.available_maps[i]}")
+        self.cur_map = read_map(f"{self.file_path}/{self.available_maps[i]}")
         self.drop_open = False
         self.select = i + 1
         self.old_score = 0
