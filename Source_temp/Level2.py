@@ -436,10 +436,12 @@ class Level2 (Level):
                     numWalls = min(countNumWallsBetweenTwoPositions(startPositionForFinding, cell), numWalls)
                 unvisitedWallIntersections.append((intersection, numWalls))
                 
-        #! We will select wall intersections with the minimum num walls
         chosenWallIntersections: list[WallIntersection] = []
+        minHeuristic = 1000000000
         for intersection in unvisitedWallIntersections:
-            heappush(chosenWallIntersections, WallIntersection(intersection[0], startPositionForFinding, self.map.matrix, self.visitedMatrix, intersection[1], checkCorner(intersection[0])))
+            isCorner = checkCorner(intersection[0])
+            if (intersection[1] - 0.9 * isCorner < minHeuristic):
+                heappush(chosenWallIntersections, WallIntersection(intersection[0], startPositionForFinding, self.map.matrix, self.visitedMatrix, intersection[1], isCorner))
         
         if (len(chosenWallIntersections) == 0):
             return None
