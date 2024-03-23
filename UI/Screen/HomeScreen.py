@@ -59,7 +59,7 @@ class HomeScreen(Screen):
             size=Vector2(100, 40),
             call=lambda: self.callback("Quit"),
             color=color,
-            hover_color=HOVER,
+            hover_color=(250, 98, 98),
             font_size=font_size,
         )
         # self.widgets.add(self.background)
@@ -79,4 +79,9 @@ class HomeScreen(Screen):
             self.level = 5
         else:
             self.level = int(txt.split(" ")[-1])
+        
+        #! temp return
+        if self.level != 1:
+            print("Level not available")
+            self.level = 5
         return

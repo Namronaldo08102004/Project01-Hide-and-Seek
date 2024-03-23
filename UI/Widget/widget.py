@@ -36,11 +36,23 @@ class WidgetGroup:
     def add(self, widget: Widget):
         self.widgets.append(widget)
 
-    def pop(self, name: str):
+    def pop(self, name: str, text: str = None):
+        if not text:
+            for i in range(len(self.widgets)):
+                if self.widgets[i].__class__.__name__ == name:
+                    self.widgets.pop(i)
+                    return
         for i in range(len(self.widgets)):
-            if self.widgets[i].__class__.__name__ == name:
+            if self.widgets[i].__class__.__name__ == name and self.widgets[i].text == text:
                 self.widgets.pop(i)
-                break
+                return
+    def pop_all(self, name: str):
+        index = 0
+        while index < len(self.widgets):
+            if self.widgets[index].__class__.__name__ == name:
+                self.widgets.pop(index)
+            else:
+                index += 1
 
     def __render__(self, display):
         for widget in self.widgets:
@@ -53,7 +65,11 @@ class WidgetGroup:
     def __str__(self):
         s: str = ""
         for widget in self.widgets:
-            s += widget.__class__.__name__ + "\t"
+            s += widget.__class__.__name__
+            try:
+                s += f": {widget.text}\n"
+            except:
+                s += "\n"
         return s
 
 
@@ -147,6 +163,8 @@ class Text(Widget):
             return
 
         text = self.font.render(self.text, True, self.color)
+        pygame.draw.rect(display, (255, 255, 255), self.rect)
+        
         display.blit(
             text,
             (

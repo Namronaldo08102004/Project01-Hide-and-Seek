@@ -1,11 +1,10 @@
 import pygame
 from Configs.config import *
 from Screen.Screen import Screen
+from Screen.DisplayMap import *
 from Utils.getMap import *
 from Utils.move import *
 from Widget.widget import *
-from Source.Level1 import *
-
 
 class RunScreen(Screen):
     def __init__(self, level: int = 1, display=None):
@@ -13,6 +12,8 @@ class RunScreen(Screen):
         self.level = level
         pygame.display.set_caption(f"Hide and Seek - Level {level}")
         self.display = display
+        
+        self.old_score = 0
 
     def __initiate__(self):
         super().__initiate__()
@@ -24,6 +25,15 @@ class RunScreen(Screen):
 
     def __update__(self, event):
         self.widgets = WidgetGroup()
+        if self.old_score != 0:
+            txt = Text(
+                text=f"Score: {self.old_score}",
+                position=Vector2(WIDTH // 2 + 300, HEIGHT // 2 + 200),
+                size=Vector2(120, 50),
+                color=BLACK,
+                font_size=26,
+            )
+            self.widgets.add(txt)
         self.drop_down_box = Button(
             text=(
                 "Select Map"
@@ -79,56 +89,12 @@ class RunScreen(Screen):
         self.cur_map = read_map(f"Maps/{self.available_maps[i]}")
         self.drop_open = False
         self.select = i + 1
-
-    # hàm này nó sẽ gọi khi bấm nút start
-    # Data hiện đag có sẽ là level và cái map đã đọc sẵn theo format 1, 2, 3, 4, 5
+        self.old_score = 0
+        
     def begin_move(self):
-        game = None
-        if (self.level == 1):
-            map = Map(self.cur_map)
-            game = Level1(map)
-            
-            listThings = game.level1()
-            first = next(listThings)
-            
-            for thing in listThings:
-                score = thing[2]
-                seeker_pos = thing[0]
-                
-                # nó sẽ lấy hướng đi
-                direction = getDirection(first[0], seeker_pos)
-                
-                # di chuyển
-                self.cur_map = moveTiles(mp=self.cur_map, mv=direction, loc=first[0])
-                
-                # in ra màn hình
-                self.printMap(score)
-                
-                # cập nhật lại first
-                first = thing
-        else:
-            return
+        run = DisplayMap(self.cur_map, self.level, self.display, self.widgets)
+        self.old_score = run.getScore()
+        
+    def pausing(self):
+        pass
     
-    def printMap (self, score):
-        mp = MapWidget(self.cur_map, self.level)
-        mp.__render__(self.display)
-        txt = Text(
-            text=f"Score: {score}",
-            position=Vector2(WIDTH // 2 + 300, HEIGHT // 2 + 200),
-            size=Vector2(120, 50),
-            color=BLACK,
-            font_size=26,
-        )
-        txt.__render__(self.display)
-        # print(str(self.widgets))
-        self.widgets.pop("Text")
-        self.widgets.pop("MapWidget")
-
-        self.widgets.add(txt)
-        self.widgets.add(mp)
-        # print(str(self.widgets))
-
-        # In lại ra màn hình
-        self.widgets.__render__(self.display)
-        pygame.display.flip()
-        pygame.time.wait(DELAY_TIME)
