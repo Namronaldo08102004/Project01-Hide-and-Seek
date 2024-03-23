@@ -472,6 +472,8 @@ class Level1 (Level):
             
         if (self.IdentifiedAnnouncement is None):
             self.IdentifiedAnnouncement = self.identifyObservableAnnouncement()
+            if (self.IdentifiedAnnouncement is not None):
+                self.IdentifiedHider = self.hiderPosition
         
         #! Observed hider --> Conduct to touch the hider
         if (self.IdentifiedHider is not None and self.goalPosition != self.IdentifiedHider):
@@ -480,40 +482,10 @@ class Level1 (Level):
             self.pathMove = 0
             return
         
-        #! Observed an announcement while not observing the hider or observed an announcement before --> Conduct to move to the position of that announcement
-        if (self.IdentifiedHider is None and self.listUnvisitedPositionsAroundAnnouncement is None and 
-            self.IdentifiedAnnouncement is not None and self.goalPosition != self.IdentifiedAnnouncement):
-            self.goalPosition = self.IdentifiedAnnouncement
-            self.path = self.getShortestPath(self.goalPosition)
-            self.pathMove = 0
-            return
-        
         if (self.seekerPosition == self.goalPosition or self.visitedMatrix[self.goalPosition[0]][self.goalPosition[1]]):
             #! Reached the position of the hider -> Stop
             if (self.IdentifiedHider is not None):
-                return
-            #! Reached the position of the announcement -> Get unvisited positions in the radius of 3 around this announcement.
-            elif (self.listUnvisitedPositionsAroundAnnouncement is None and self.IdentifiedAnnouncement is not None): 
-                listUnvisitedPositions = []
-                
-                for level in range (1, 3):
-                    for row in range (self.IdentifiedAnnouncement[0] - level, self.IdentifiedAnnouncement[0] + level + 1):
-                        if (row >= 0 and row < self.map.numRows):
-                            for col in range (self.IdentifiedAnnouncement[1] - level, self.IdentifiedAnnouncement[1] + level + 1):
-                                if (col >= 0 and col < self.map.numCols and not self.visitedMatrix[row][col] and self.IdentifiedAnnouncement != (row, col)):
-                                    listUnvisitedPositions.append((row, col))
-
-                self.listUnvisitedPositionsAroundAnnouncement = listUnvisitedPositions.copy()
-                self.goalPosition = self.listUnvisitedPositionsAroundAnnouncement[0]
-                self.listUnvisitedPositionsAroundAnnouncement = self.listUnvisitedPositionsAroundAnnouncement[1:]
-                self.path = self.getShortestPath(self.goalPosition)
-                self.pathMove = 0
-            #! Reached one unvisited position in the radius of 3 around the old announcement
-            elif (self.listUnvisitedPositionsAroundAnnouncement is not None and len(self.listUnvisitedPositionsAroundAnnouncement) != 0):
-                self.goalPosition = self.listUnvisitedPositionsAroundAnnouncement[0]
-                self.listUnvisitedPositionsAroundAnnouncement = self.listUnvisitedPositionsAroundAnnouncement[1:]
-                self.path = self.getShortestPath(self.goalPosition)
-                self.pathMove = 0          
+                return       
             else:
                 self.goalPosition = self.getNearestWallIntersection()
                 if (self.goalPosition is not None):

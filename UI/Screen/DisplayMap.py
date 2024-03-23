@@ -4,6 +4,7 @@ import threading
 import pygame
 from Configs.config import *
 from Source.Level1 import *
+from Source.Level2 import *
 from Utils.move import *
 from Widget.widget import *
 
@@ -31,8 +32,8 @@ class DisplayMap:
     def redirect(self):
         if self.level == 1:
             self.runLevel1()
-        # elif self.level == 2:
-        #     self.runLevel2()
+        elif self.level == 2:
+            self.runLevel2()
         # elif self.level == 3:
         #     self.runLevel3()
         # elif self.level == 4:
@@ -41,6 +42,9 @@ class DisplayMap:
 
     def runLevel1(self):
         map = Map(self.cur_map)
+        if (len(map.listHiderPositions) != 1):
+                raise Exception("This is not a map for Level 1")
+            
         game = Level1(map)
 
         listThings = game.level1()
@@ -67,6 +71,34 @@ class DisplayMap:
             # Recover the announcement position
             if thing[4]:
                 self.cur_map[thing[4][0]][thing[4][1]] = tmp
+            # cập nhật lại prev
+            prev = thing
+        self.score = score
+        
+    def runLevel2 (self):
+        map = Map(self.cur_map)
+        if (len(map.listHiderPositions) < 2):
+                raise Exception("This is not a map for Level 2")
+        
+        game = Level2(map)
+
+        listThings = game.level2()
+        prev = next(listThings)
+
+        for thing in listThings:
+            score = thing[2]
+            seeker_pos = thing[0]
+
+            # nó sẽ lấy hướng đi
+            direction = getDirection(prev[0], seeker_pos)
+
+            # di chuyển
+            self.cur_map = recov_obser(mp=self.cur_map, loc=prev[3])
+            self.cur_map = moveTiles(mp=self.cur_map, mv=direction, loc=prev[0])
+            self.cur_map = assign_obser(mp=self.cur_map, loc=thing[3])
+            # in ra màn hình
+            self.printMap(score)
+
             # cập nhật lại prev
             prev = thing
         self.score = score

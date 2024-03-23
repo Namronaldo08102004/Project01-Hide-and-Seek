@@ -2,6 +2,8 @@ EMPTY = 0
 WALL = 1
 HIDER = 2
 SEEKER = 3
+OBSERVABLE = 4
+OBSTACLE = 5
 
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
@@ -25,7 +27,7 @@ def getValidNeighbors (state: tuple[int, int], map: list[list[int]]) -> list[tup
         for (x, y) in candidates:
             if 0 <= x <= width - 1 and 0 <= y <= length - 1:
                 check = True
-                if (map[x][y] == WALL):
+                if (map[x][y] in [WALL, OBSTACLE]):
                     check = False
                 
                 if (check):

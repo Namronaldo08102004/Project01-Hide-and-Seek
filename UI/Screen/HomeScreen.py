@@ -81,7 +81,7 @@ class HomeScreen(Screen):
             self.level = int(txt.split(" ")[-1])
         
         #! temp return
-        if self.level != 1:
+        if self.level not in {1,2}:
             print("Level not available")
             self.level = 5
         return

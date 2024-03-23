@@ -1,4 +1,4 @@
-from Level_util import *
+from Source.Level_util import *
 
 class Hider:
     def __init__ (self, state: tuple[int, int], startPosition: tuple[int, int], map, visitedMatrix):
@@ -616,44 +616,50 @@ class Level2 (Level):
                     else:
                         raise Exception ("Your map is missing the hider")
                     
-    # def level2 (self):
-    #     """
-    #     This function is created for saving all essential things in level 1 for displaying on the game screen
-    #     It will return a list of things, each thing will encompass 5 things:
-    #         + The position of the seeker
-    #         + The position of the hider
-    #         + The current score of the game
-    #         + The list of cells that the seeker can observe at the current time
-    #         + The announcement that the hider broadcast (It can be None if it does not exist)
-    #     """
-    #     listThingsInLevel1 = []
-    #     listThingsInLevel1.append((self.seekerPosition, self.hiderPosition, self.score, self.listObservableCells, self.announcement))
+    def level2 (self):
+        """
+        This function is created for saving all essential things in level 1 for displaying on the game screen
+        It will return a list of things, each thing will encompass 5 things:
+            + The position of the seeker
+            + The list of positions of all hiders
+            + The current score of the game
+            + The list of cells that the seeker can observe at the current time
+            + The announcement that the hider broadcast (It can be None if it does not exist)
+        """
+        listThingsInLevel1 = []
+        listThingsInLevel1.append((self.seekerPosition, self.listHiderPositions, self.score, self.listObservableCells, self.announcementDict))
+        yield listThingsInLevel1[-1]
                 
-    #     while (True):
-    #         if (self.takeTurn == SEEKER):
-    #             self.seekerTakeTurn()
-    #             self.takeTurn = HIDER
-    #             if (self.seekerPosition != self.hiderPosition):
-    #                 self.numSeekerSteps = self.numSeekerSteps + 1
-    #                 self.score = self.score - 1
-    #             else:
-    #                 self.score = self.score + 20
-    #                 break
+        while (True):
+            if (self.takeTurn == SEEKER):
+                tempListHiderPositions = self.listHiderPositions.copy()
+                self.seekerTakeTurn()
+                self.takeTurn = HIDER
+                if (len(self.listHiderPositions) != 0 and self.seekerPosition not in tempListHiderPositions):
+                    self.numSeekerSteps = self.numSeekerSteps + 1
+                    self.score = self.score - 1
+                    listThingsInLevel1.append((self.seekerPosition, self.listHiderPositions, self.score, self.listObservableCells, self.announcementDict))
+                    yield listThingsInLevel1[-1]
+                else:
+                    self.score = self.score + 20
+                    listThingsInLevel1.append((self.seekerPosition, self.listHiderPositions, self.score, self.listObservableCells, self.announcementDict))
+                    yield listThingsInLevel1[-1]
+                    
+                    if (len(self.listHiderPositions) == 0):
+                        break
+
+            else:
+                for hider in self.listHiderPositions:
+                    self.hiderTakeTurn(hider)
+                self.takeTurn = SEEKER
+                self.numHiderSteps = self.numHiderSteps + 1
                 
-    #             listThingsInLevel1.append((self.seekerPosition, self.hiderPosition, self.score, self.listObservableCells, self.announcement))
-    #         else:
-    #             self.hiderTakeTurn()
-    #             self.takeTurn = SEEKER
-    #             if (self.seekerPosition != self.hiderPosition):
-    #                 self.numHiderSteps = self.numHiderSteps + 1
-    #                 if (self.announcementTime is not None and self.announcementTime < 1):
-    #                     self.announcementTime = self.announcementTime + 1
-    #                 else:
-    #                     #! After 2 steps, the announcement disappears
-    #                     if (self.announcementTime is not None):
-    #                         self.announcement = None
-    #                         self.announcementTime = None
-    #             else:
-    #                 break
+                if (self.numHiderSteps != 0 and self.numHiderSteps != 1 and 
+                    (self.numHiderSteps % 8 == 0 or self.numHiderSteps % 8 == 1)):
+                    continue
+                else:
+                    #! After 2 steps, the announcement disappears
+                    if (len(self.announcementDict) != 0):                        
+                        self.announcementDict = dict()
         
-    #     return listThingsInLevel1
+        return None
