@@ -1,12 +1,12 @@
+# import multiprocessing as mtpc
+import threading
+
 import pygame
 from Configs.config import *
 from Source.Level1 import *
 from Source.Level2 import *
 from Utils.move import *
 from Widget.widget import *
-
-# import multiprocessing as mtpc
-import threading
 
 
 class DisplayMap:
@@ -22,12 +22,12 @@ class DisplayMap:
         self.thread1 = threading.Thread(target=self.redirect)
         self.thread2 = threading.Thread(target=self.checkQuit)
 
-        self.thread1.start()
-        self.thread2.start()
-        self.thread1.join()
+        # self.thread1.start()
+        # self.thread2.start()
+        # self.thread1.join()
         # self.thread2.join()
         # self.event.wait()
-        # self.redirect()
+        self.redirect()
 
     def redirect(self):
         if self.level == 1:
@@ -61,9 +61,16 @@ class DisplayMap:
             self.cur_map = recov_obser(mp=self.cur_map, loc=prev[3])
             self.cur_map = moveTiles(mp=self.cur_map, mv=direction, loc=prev[0])
             self.cur_map = assign_obser(mp=self.cur_map, loc=thing[3])
+
+            tmp = (0, 0)
+            if thing[4]:
+                tmp = self.cur_map[thing[4][0]][thing[4][1]]
+                self.cur_map[thing[4][0]][thing[4][1]] = 6
             # in ra màn hình
             self.printMap(score)
-
+            # Recover the announcement position
+            if thing[4]:
+                self.cur_map[thing[4][0]][thing[4][1]] = tmp
             # cập nhật lại prev
             prev = thing
         self.score = score
@@ -105,7 +112,7 @@ class DisplayMap:
         txt = Text(
             text=f"Score: {score}",
             position=Vector2(WIDTH // 2 + 300, HEIGHT // 2 + 200),
-            size=Vector2(120, 50),
+            size=Vector2(150, 50),
             color=BLACK,
             font_size=26,
         )

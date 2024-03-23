@@ -29,7 +29,7 @@ class RunScreen(Screen):
             txt = Text(
                 text=f"Score: {self.old_score}",
                 position=Vector2(WIDTH // 2 + 300, HEIGHT // 2 + 200),
-                size=Vector2(120, 50),
+                size=Vector2(150, 50),
                 color=BLACK,
                 font_size=26,
             )

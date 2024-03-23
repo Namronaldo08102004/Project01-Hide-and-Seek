@@ -236,6 +236,8 @@ class MapWidget(Widget):
                         color = OBSERVABLEC
                     case 5:
                         color = OBSTACLEC
+                    case 6:
+                        color = ANNOUNCEC
                     case _:
                         pass
                 block = pygame.Rect(
