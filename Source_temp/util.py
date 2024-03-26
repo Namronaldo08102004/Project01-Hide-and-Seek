@@ -33,7 +33,7 @@ def getValidNeighbors (state: tuple[int, int], map: list[list[int]]) -> list[tup
         return result
 
 class Node:
-    def __init__ (self, state: tuple[int, int], parent, goal: tuple[int, int], visited: bool):
+    def __init__ (self, state: tuple[int, int], parent, goal: tuple[int, int], visited: bool = 0):
         self.state = state
         self.parent = parent
         self.pathCost = None

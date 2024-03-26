@@ -1,33 +1,5 @@
 from Level_util import *
 
-class Hider:
-    def __init__ (self, state: tuple[int, int], startPosition: tuple[int, int], map, visitedMatrix):
-        self.state = state
-        self.startPosition = startPosition
-        self.map = map
-        self.visitedMatrix = visitedMatrix
-        
-    def __lt__ (self, other):
-        goal1 = A_Star(self.startPosition, self.state, self.map, self.visitedMatrix)
-        goal2 = A_Star(self.startPosition, other.state, self.map, self.visitedMatrix)
-        shortestPath1 = []
-        shortestPath2 = []
-        
-        while (goal1 is not None):
-            shortestPath1.append(goal1.state)
-            goal1 = goal1.parent
-        while (goal2 is not None):
-            shortestPath2.append(goal2.state)
-            goal2 = goal2.parent
-        
-        return len(shortestPath1) < len(shortestPath2)
-    
-    def __eq__ (self, other):
-        return self.state == other.state
-    
-    def __hash__ (self):
-        return hash(self.state)
-
 class Level2 (Level):
     """
         Our strategy for level 2 is same with level 1
@@ -548,7 +520,13 @@ class Level2 (Level):
             self.visitedMatrix[self.goalPosition[0]][self.goalPosition[1]] = True
             #! Reached the position of the hider
             if (len(self.listIdentifiedHiders) != 0 and checkGoalPositionInListIdentifiedHiders(self.goalPosition, self.listIdentifiedHiders)):
-                _ = heappop(self.listIdentifiedHiders)
+                removeHider = None
+                for hider in self.listIdentifiedHiders:
+                    if (self.goalPosition == hider.state):
+                        removeHider = hider
+                        break
+                
+                self.listIdentifiedHiders.remove(removeHider)
                 self.listHiderPositions.remove(self.goalPosition)
                 
                 if (len(self.listHiderPositions) == 0):

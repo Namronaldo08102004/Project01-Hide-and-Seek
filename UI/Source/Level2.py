@@ -496,6 +496,10 @@ class Level2 (Level):
             
             return False
         
+        for hider in self.listIdentifiedHiders:
+            print(hider.state, end = " ")
+        print()
+        
         self.seekerPosition = self.path[self.pathMove]
         self.pathMove = self.pathMove + 1
         self.listObservableCells = self.getObservableCells(self.seekerPosition)
@@ -511,7 +515,7 @@ class Level2 (Level):
                     
                     for correspondingHider in correspondingHiders:
                         if (not self.visitedMatrix[correspondingHider[0]][correspondingHider[1]]):
-                            listCorrespondingHiders.append(Hider(correspondingHider, self.seekerPosition, self.map.matrix, self.visitedMatrix))
+                            heappush(listCorrespondingHiders, Hider(correspondingHider, self.seekerPosition, self.map.matrix, self.visitedMatrix))
                         
                 self.listIdentifiedHiders = list(set(self.listIdentifiedHiders).union(set(listCorrespondingHiders)))
             
@@ -531,7 +535,7 @@ class Level2 (Level):
                     
                     for correspondingHider in correspondingHiders:
                         if (not self.visitedMatrix[correspondingHider[0]][correspondingHider[1]]):
-                            listCorrespondingHiders.append(Hider(correspondingHider, self.seekerPosition, self.map.matrix, self.visitedMatrix))
+                            heappush(listCorrespondingHiders, Hider(correspondingHider, self.seekerPosition, self.map.matrix, self.visitedMatrix))
                         
                 self.listIdentifiedHiders = list(set(self.listIdentifiedHiders).union(set(listCorrespondingHiders)))
         
@@ -548,7 +552,13 @@ class Level2 (Level):
             self.visitedMatrix[self.goalPosition[0]][self.goalPosition[1]] = True
             #! Reached the position of the hider
             if (len(self.listIdentifiedHiders) != 0 and checkGoalPositionInListIdentifiedHiders(self.goalPosition, self.listIdentifiedHiders)):
-                _ = heappop(self.listIdentifiedHiders)
+                removeHider = None
+                for hider in self.listIdentifiedHiders:
+                    if (self.goalPosition == hider.state):
+                        removeHider = hider
+                        break
+                
+                self.listIdentifiedHiders.remove(removeHider)
                 self.listHiderPositions.remove(self.goalPosition)
                 
                 if (len(self.listHiderPositions) == 0):
