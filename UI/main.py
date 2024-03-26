@@ -1,5 +1,6 @@
-import os # last import (all other imports above this one)
-os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = 'hide'
+import os  # last import (all other imports above this one)
+
+os.environ["PYGAME_HIDE_SUPPORT_PROMPT"] = "hide"
 
 import pygame
 from Configs.config import *
@@ -10,7 +11,6 @@ from Screen.RunScreen import RunScreen
 class App:
     def __init__(self):
         self.display = pygame.display.set_mode((WIDTH, HEIGHT))
-        pygame.display.set_caption("Hide and Seek")
         self.clock = pygame.time.Clock()
         self.isRunning = True
         pygame.init()
@@ -32,7 +32,13 @@ class App:
             if self.screen_queue[-1].level == 5:
                 self.isRunning = False
             elif self.screen_queue[-1].level != -1:
-                self.screen_queue.append(RunScreen(self.screen_queue[-1].level, self.display))
+                self.screen_queue.append(
+                    RunScreen(self.screen_queue[-1].level, self.display)
+                )
+                self.screen_queue[-1].__initiate__()
+        elif self.screen_queue[-1].__class__.__name__ == "RunScreen":
+            if self.screen_queue[-1].back2HC:
+                self.screen_queue.pop()
                 self.screen_queue[-1].__initiate__()
 
     def run(self):
@@ -54,4 +60,9 @@ class App:
 
 app = App()
 app.__initiate__(HomeScreen())
-app.run()
+try:
+    app.run()
+except Exception as e:
+    print(e)
+    pygame.quit()
+    quit()

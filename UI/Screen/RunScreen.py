@@ -15,6 +15,7 @@ class RunScreen(Screen):
         self.display = display
 
         self.old_score = 0
+        self.back2HC = False
 
     def __initiate__(self):
         super().__initiate__()
@@ -29,6 +30,19 @@ class RunScreen(Screen):
 
     def __update__(self, event):
         self.widgets = WidgetGroup()
+
+        if not self.drop_open:
+            self.back = Button(
+                text="Back",
+                position=Vector2(WIDTH - 280, HEIGHT - 250),
+                size=Vector2(100, 40),
+                call=lambda: self.backing(),
+                color=BLACK,
+                hover_color=HOVER,
+                font_size=30,
+            )
+            self.widgets.add(self.back)
+
         if self.old_score != 0:
             txt = Text(
                 text=f"Score: {self.old_score}",
@@ -57,7 +71,7 @@ class RunScreen(Screen):
             position=Vector2(WIDTH // 2 + 235, HEIGHT // 2 - 100 - 53),
             # size=Vector2(50, 50),
             scale=0.3,
-            rotate= 0 if self.drop_open else 90
+            rotate=0 if self.drop_open else 90,
         )
         self.widgets.add(triangle)
         if self.drop_open:
@@ -78,12 +92,12 @@ class RunScreen(Screen):
             if not self.drop_open:
                 start = Button(
                     text="Begin",
-                    position=Vector2(WIDTH // 2 + 300, HEIGHT // 2 + 100),
-                    size=Vector2(120, 50),
+                    position=Vector2(WIDTH - 150, HEIGHT - 250),
+                    size=Vector2(100, 40),
                     call=lambda: self.begin_move(),
                     color=BLACK,
                     hover_color=HOVER,
-                    font_size=26,
+                    font_size=30,
                 )
                 self.widgets.add(start)
 
@@ -102,6 +116,9 @@ class RunScreen(Screen):
         self.drop_open = False
         self.select = i + 1
         self.old_score = 0
+
+    def backing(self):
+        self.back2HC = True
 
     def begin_move(self):
         run = DisplayMap(self.cur_map, self.level, self.display, self.widgets)

@@ -9,8 +9,10 @@ class HomeScreen(Screen):
 
     def __initiate__(self):
         super().__initiate__()
+        pygame.display.set_caption("Hide and Seek")
 
         self.image = Image("Assets/HideNSeek.png", Vector2(WIDTH // 2 - 150, 30), 1 / 2)
+        self.level = -1
 
         w = WIDTH // 2 - 50
         h = HEIGHT // 2 + 20
@@ -79,9 +81,9 @@ class HomeScreen(Screen):
             self.level = 5
         else:
             self.level = int(txt.split(" ")[-1])
-        
+
         #! temp return
-        if self.level not in {1,2}:
+        if self.level not in {1, 2}:
             print("Level not available")
             self.level = 5
         return

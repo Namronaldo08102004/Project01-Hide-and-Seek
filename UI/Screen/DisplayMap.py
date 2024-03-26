@@ -42,7 +42,7 @@ class DisplayMap:
 
     def runLevel1(self):
         map = Map(self.cur_map)
-        if len(map.listHiderPositions) > 1:
+        if len(map.listHiderPositions) != 1:
             raise Exception("This is not a map for Level 1")
 
         game = Level1(map)
