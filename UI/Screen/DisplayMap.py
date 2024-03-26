@@ -42,9 +42,9 @@ class DisplayMap:
 
     def runLevel1(self):
         map = Map(self.cur_map)
-        if (len(map.listHiderPositions) != 1):
-                raise Exception("This is not a map for Level 1")
-            
+        if len(map.listHiderPositions) > 1:
+            raise Exception("This is not a map for Level 1")
+
         game = Level1(map)
 
         listThings = game.level1()
@@ -74,12 +74,12 @@ class DisplayMap:
             # cập nhật lại prev
             prev = thing
         self.score = score
-        
-    def runLevel2 (self):
+
+    def runLevel2(self):
         map = Map(self.cur_map)
         # if (len(map.listHiderPositions) < 2):
         #         raise Exception("This is not a map for Level 2")
-        
+
         game = Level2(map)
 
         listThings = game.level2()
@@ -96,8 +96,20 @@ class DisplayMap:
             self.cur_map = recov_obser(mp=self.cur_map, loc=prev[3])
             self.cur_map = moveTiles(mp=self.cur_map, mv=direction, loc=prev[0])
             self.cur_map = assign_obser(mp=self.cur_map, loc=thing[3])
+
+            # Announcement
+            tmp = []
+            if thing[4]:
+                for x, y in thing[4]:
+                    tmp.append(self.cur_map[x][y])
+                    self.cur_map[x][y] = 6
+
             # in ra màn hình
             self.printMap(score)
+
+            if thing[4]:
+                for i, (x, y) in enumerate(thing[4]):
+                    self.cur_map[x][y] = tmp[i]
 
             # cập nhật lại prev
             prev = thing
@@ -111,8 +123,8 @@ class DisplayMap:
         mp = MapWidget(self.cur_map, self.level)
         txt = Text(
             text=f"Score: {score}",
-            position=Vector2(WIDTH // 2 + 300, HEIGHT // 2 + 200),
-            size=Vector2(150, 50),
+            position=Vector2(WIDTH // 2 + 280, HEIGHT // 2 + 200),
+            size=Vector2(180, 50),
             color=BLACK,
             font_size=26,
         )

@@ -1,10 +1,11 @@
 import pygame
 from Configs.config import *
-from Screen.Screen import Screen
 from Screen.DisplayMap import *
+from Screen.Screen import Screen
 from Utils.getMap import *
 from Utils.move import *
 from Widget.widget import *
+
 
 class RunScreen(Screen):
     def __init__(self, level: int = 1, display=None):
@@ -12,14 +13,16 @@ class RunScreen(Screen):
         self.level = level
         pygame.display.set_caption(f"Hide and Seek - Level {level}")
         self.display = display
-        
+
         self.old_score = 0
 
     def __initiate__(self):
         super().__initiate__()
         self.drop_open = False
         self.select = -1
-        self.file_path = "Maps/" + ("Single_Hider" if self.level == 1 else "Multi_Hiders")
+        self.file_path = "Maps/" + (
+            "Single_Hider" if self.level == 1 else "Multi_Hiders"
+        )
         self.available_maps = list_map(self.file_path)
         self.cur_map = None
         self.__update__(pygame.event.Event(pygame.NOEVENT))
@@ -29,7 +32,7 @@ class RunScreen(Screen):
         if self.old_score != 0:
             txt = Text(
                 text=f"Score: {self.old_score}",
-                position=Vector2(WIDTH // 2 + 300, HEIGHT // 2 + 200),
+                position=Vector2(WIDTH // 2 + 280, HEIGHT // 2 + 200),
                 size=Vector2(150, 50),
                 color=BLACK,
                 font_size=26,
@@ -42,13 +45,21 @@ class RunScreen(Screen):
                 else self.available_maps[self.select - 1]
             ),
             position=Vector2(WIDTH // 2 + 300, HEIGHT // 2 - 100 - 50),
-            size=Vector2(120, 50),
+            size=Vector2(180, 50),
             call=lambda: self.drop(),
             color=BLACK,
             hover_color=HOVER,
             font_size=26,
         )
         self.widgets.add(self.drop_down_box)
+        triangle = Image(
+            src="Assets/UpsideDownTri.png",
+            position=Vector2(WIDTH // 2 + 235, HEIGHT // 2 - 100 - 53),
+            # size=Vector2(50, 50),
+            scale=0.3,
+            rotate= 0 if self.drop_open else 90
+        )
+        self.widgets.add(triangle)
         if self.drop_open:
             for i in range(len(self.available_maps)):
                 but = Button(
@@ -91,11 +102,10 @@ class RunScreen(Screen):
         self.drop_open = False
         self.select = i + 1
         self.old_score = 0
-        
+
     def begin_move(self):
         run = DisplayMap(self.cur_map, self.level, self.display, self.widgets)
         self.old_score = run.getScore()
-        
+
     def pausing(self):
         pass
-    

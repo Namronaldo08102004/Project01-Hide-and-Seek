@@ -16,3 +16,5 @@ ANNOUNCEC = (0, 0, 0)
 PATH = (223, 117, 69)
 
 DELAY_TIME = 100  # ms
+
+FONT = "Assets/MadimiOne-Regular.ttf"

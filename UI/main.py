@@ -1,3 +1,6 @@
+import os # last import (all other imports above this one)
+os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = 'hide'
+
 import pygame
 from Configs.config import *
 from Screen.HomeScreen import HomeScreen

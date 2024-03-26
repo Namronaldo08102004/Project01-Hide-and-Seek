@@ -14,6 +14,7 @@ SKINCOLOR = (255, 224, 189)
 RED = (255, 0, 0)
 GREEN = (0, 171, 28)
             
+            
 def manhattanDistance (point1: tuple[int, int], point2: tuple[int, int]):
     return abs(point2[0] - point1[0]) + abs(point2[1] - point1[1])
 

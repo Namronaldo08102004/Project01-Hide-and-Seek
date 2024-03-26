@@ -43,9 +43,13 @@ class WidgetGroup:
                     self.widgets.pop(i)
                     return
         for i in range(len(self.widgets)):
-            if self.widgets[i].__class__.__name__ == name and self.widgets[i].text == text:
+            if (
+                self.widgets[i].__class__.__name__ == name
+                and self.widgets[i].text == text
+            ):
                 self.widgets.pop(i)
                 return
+
     def pop_all(self, name: str):
         index = 0
         while index < len(self.widgets):
@@ -61,7 +65,7 @@ class WidgetGroup:
     def __update__(self, event):
         for widget in self.widgets:
             widget.__update__(event)
-    
+
     def __str__(self):
         s: str = ""
         for widget in self.widgets:
@@ -80,7 +84,7 @@ class Button(Widget):
         call: callable = None,
         size: Vector2 = None,
         position: Vector2 = Vector2(0, 0),
-        font="OpenSans-Regular.ttf",
+        font=FONT,
         font_size: int = 20,
         color: tuple = (255, 255, 255),
         hover_color: tuple = (255, 0, 0),
@@ -144,7 +148,7 @@ class Text(Widget):
         text: str = None,
         position: Vector2 = Vector2(0, 0),
         size: Vector2 = None,
-        font="OpenSans-Regular.ttf",
+        font=FONT,
         font_size: int = 20,
         color: tuple = (255, 255, 255),
     ):
@@ -164,7 +168,7 @@ class Text(Widget):
 
         text = self.font.render(self.text, True, self.color)
         pygame.draw.rect(display, (255, 255, 255), self.rect)
-        
+
         display.blit(
             text,
             (
@@ -179,7 +183,11 @@ class Text(Widget):
 
 class Image(Widget):
     def __init__(
-        self, src: str = None, position: Vector2 = Vector2(0, 0), scale: float = 1.0
+        self,
+        src: str = None,
+        position: Vector2 = Vector2(0, 0),
+        scale: float = 1.0,
+        rotate: int = 0,
     ):
         if src == None:
             raise Exception("Image must have an image")
@@ -187,6 +195,7 @@ class Image(Widget):
             raise Exception("Scale must be positive")
         self.image = src
         self.scale = scale
+        self.rotate = rotate
 
         self.__initiate__()
         self.size = Vector2(self.image.get_size()[0], self.image.get_size()[1])
@@ -198,6 +207,7 @@ class Image(Widget):
     def __initiate__(self):
         self.image = pygame.image.load(self.image)
         self.image = pygame.transform.scale_by(self.image, self.scale)
+        self.image = pygame.transform.rotate(self.image, self.rotate)
 
     def __render__(self, display):
         display.blit(
@@ -217,7 +227,7 @@ class MapWidget(Widget):
         self.map = mp
         self.level = level
 
-        self.cell_size = 600 // max(len(self.map), len(self.map[0]))
+        self.cell_size = HEIGHT // max(len(self.map), len(self.map[0]))
         self.top_gap = (HEIGHT - len(self.map) * self.cell_size) // 2
         self.left_gap = (WIDTH - len(self.map[0]) * self.cell_size) // 2
 
