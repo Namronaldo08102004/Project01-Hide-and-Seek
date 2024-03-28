@@ -496,10 +496,6 @@ class Level2 (Level):
             
             return False
         
-        for hider in self.listIdentifiedHiders:
-            print(hider.state, end = " ")
-        print()
-        
         self.seekerPosition = self.path[self.pathMove]
         self.pathMove = self.pathMove + 1
         self.listObservableCells = self.getObservableCells(self.seekerPosition)

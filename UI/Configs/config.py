@@ -5,16 +5,22 @@ WHITE, BLACK = (255, 255, 255), (0, 0, 0)
 RED, GREEN, BLUE = (255, 0, 0), (0, 255, 0), (0, 0, 255)
 
 HOVER = (30, 233, 240)
+
+LEGEND_BGC = (243, 203, 218)
+
+
 BGC = (235, 215, 232)
 WALLC = (156, 175, 170)
 SEEKERC = (236, 84, 37)
 HIDERC = (53, 228, 94)
-OBSERVABLEC = (249, 247, 201)
 OBSTACLEC = (116, 105, 182)
 ANNOUNCEC = (0, 0, 0)
+HIDER_OBSERVABLEC = (233, 231, 174)
+SEEKER_OBSERVABLEC = (109, 221, 212)
 
 PATH = (223, 117, 69)
 
 DELAY_TIME = 100  # ms
 
 FONT = "Assets/MadimiOne-Regular.ttf"
+FONT2 = "Assets/OpenSans-Regular.ttf"

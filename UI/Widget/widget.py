@@ -243,11 +243,13 @@ class MapWidget(Widget):
                     case 3:
                         color = SEEKERC
                     case 4:
-                        color = OBSERVABLEC
+                        color = SEEKER_OBSERVABLEC
                     case 5:
                         color = OBSTACLEC
                     case 6:
                         color = ANNOUNCEC
+                    case 7:
+                        color = HIDER_OBSERVABLEC
                     case _:
                         pass
                 block = pygame.Rect(
@@ -260,3 +262,46 @@ class MapWidget(Widget):
 
     def __update__(self, event):
         pass
+
+
+class Legend(Widget):
+    def __init__(
+        self,
+        position: Vector2 = Vector2(0, 0),
+        size: Vector2 = None,
+        level: int = 1,
+        key_words: list[tuple[str, tuple[int]]] = None,
+        font=FONT,
+        font_size: int = 20,
+    ):
+        super().__init__(position, size)
+        if not key_words:
+            raise Exception("Legend must have key words")
+        if level < 3:
+            key_words.pop(6)
+        self.font = pygame.font.Font(font, font_size)
+        self.key_words = key_words
+
+    def __render__(self, display):
+        line_height = self.font.get_height() + 5
+        pygame.draw.rect(display, LEGEND_BGC, self.rect)
+        
+        for i, (key, color) in enumerate(self.key_words):
+            text = self.font.render(key, True, color)
+            display.blit(
+                text,
+                (
+                    self.position.x + 5 + 30,
+                    self.position.y + i * line_height + 5,
+                ),
+            )
+            pygame.draw.rect(
+                display,
+                color,
+                (
+                    self.position.x + 5,
+                    self.position.y + i * line_height + 5,
+                    self.font.get_height(),
+                    self.font.get_height(),
+                ),
+            )   

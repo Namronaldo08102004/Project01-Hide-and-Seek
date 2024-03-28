@@ -16,6 +16,7 @@ class RunScreen(Screen):
 
         self.old_score = 0
         self.back2HC = False
+        self.ran = False
 
     def __initiate__(self):
         super().__initiate__()
@@ -34,7 +35,7 @@ class RunScreen(Screen):
         if not self.drop_open:
             self.back = Button(
                 text="Back",
-                position=Vector2(WIDTH - 280, HEIGHT - 250),
+                position=Vector2(WIDTH - 280, HEIGHT - 100),
                 size=Vector2(100, 40),
                 call=lambda: self.backing(),
                 color=BLACK,
@@ -42,12 +43,26 @@ class RunScreen(Screen):
                 font_size=30,
             )
             self.widgets.add(self.back)
+        if self.select != -1 and self.cur_map:
+            mp = MapWidget(self.cur_map, self.level)
+            self.widgets.add(mp)
+            if not self.drop_open:
+                start = Button(
+                    text="Begin" if not self.ran else "Restart",
+                    position=Vector2(WIDTH - 150, HEIGHT - 100),
+                    size=Vector2(100, 40),
+                    call=lambda: self.begin_move() if not self.ran else self.restart(),
+                    color=BLACK,
+                    hover_color=HOVER,
+                    font_size=30,
+                )
+                self.widgets.add(start)
 
         if self.old_score != 0:
             txt = Text(
                 text=f"Score: {self.old_score}",
-                position=Vector2(WIDTH // 2 + 280, HEIGHT // 2 + 200),
-                size=Vector2(150, 50),
+                position=Vector2(WIDTH // 2 + 290, HEIGHT // 2 + 200),
+                size=Vector2(180, 50),
                 color=BLACK,
                 font_size=26,
             )
@@ -58,7 +73,7 @@ class RunScreen(Screen):
                 if self.select == -1
                 else self.available_maps[self.select - 1]
             ),
-            position=Vector2(WIDTH // 2 + 300, HEIGHT // 2 - 100 - 50),
+            position=Vector2(WIDTH // 2 + 300, HEIGHT // 2 - 150 - 50),
             size=Vector2(180, 50),
             call=lambda: self.drop(),
             color=BLACK,
@@ -68,7 +83,7 @@ class RunScreen(Screen):
         self.widgets.add(self.drop_down_box)
         triangle = Image(
             src="Assets/UpsideDownTri.png",
-            position=Vector2(WIDTH // 2 + 235, HEIGHT // 2 - 100 - 53),
+            position=Vector2(WIDTH // 2 + 235, HEIGHT // 2 - 150 - 53),
             # size=Vector2(50, 50),
             scale=0.3,
             rotate=0 if self.drop_open else 90,
@@ -78,7 +93,7 @@ class RunScreen(Screen):
             for i in range(len(self.available_maps)):
                 but = Button(
                     text=self.available_maps[i],
-                    position=Vector2(WIDTH // 2 + 300, HEIGHT // 2 - 100 + i * 40),
+                    position=Vector2(WIDTH // 2 + 300, HEIGHT // 2 - 150 + i * 40),
                     size=Vector2(120, 40),
                     call=lambda i=i: self.load_map(i),
                     color=BLACK,
@@ -86,20 +101,24 @@ class RunScreen(Screen):
                     font_size=26,
                 )
                 self.widgets.add(but)
-        if self.select != -1 and self.cur_map:
-            mp = MapWidget(self.cur_map, self.level)
-            self.widgets.add(mp)
-            if not self.drop_open:
-                start = Button(
-                    text="Begin",
-                    position=Vector2(WIDTH - 150, HEIGHT - 250),
-                    size=Vector2(100, 40),
-                    call=lambda: self.begin_move(),
-                    color=BLACK,
-                    hover_color=HOVER,
-                    font_size=30,
-                )
-                self.widgets.add(start)
+        else:
+            legend = Legend(
+                position=Vector2(WIDTH // 2 + 290, HEIGHT // 2 - 120),
+                size=Vector2(160, 200),
+                level=self.level,
+                font_size=20,
+                key_words=[
+                    ("Wall", WALLC),
+                    ("Obstacle", OBSTACLEC),
+                    ("Announce", ANNOUNCEC),
+                    ("Hider", HIDERC),
+                    ("Seeker", SEEKERC),
+                    ("Seeker Vision", SEEKER_OBSERVABLEC),
+                    ("Hider Vision", HIDER_OBSERVABLEC),
+                ],
+                font=FONT2,
+            )
+            self.widgets.add(legend)
 
         self.widgets.__update__(event)
 
@@ -116,6 +135,7 @@ class RunScreen(Screen):
         self.drop_open = False
         self.select = i + 1
         self.old_score = 0
+        self.ran = False
 
     def backing(self):
         self.back2HC = True
@@ -123,6 +143,15 @@ class RunScreen(Screen):
     def begin_move(self):
         run = DisplayMap(self.cur_map, self.level, self.display, self.widgets)
         self.old_score = run.getScore()
+        self.ran = True
+        self.__update__(pygame.event.Event(pygame.NOEVENT))
+
+    def restart(self):
+        self.old_score = 0
+        self.ran = False
+        self.cur_map = read_map(
+            f"{self.file_path}/{self.available_maps[self.select-1]}"
+        )
 
     def pausing(self):
         pass

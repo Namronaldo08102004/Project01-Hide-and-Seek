@@ -123,7 +123,7 @@ class DisplayMap:
         mp = MapWidget(self.cur_map, self.level)
         txt = Text(
             text=f"Score: {score}",
-            position=Vector2(WIDTH // 2 + 280, HEIGHT // 2 + 200),
+            position=Vector2(WIDTH // 2 + 290, HEIGHT // 2 + 200),
             size=Vector2(180, 50),
             color=BLACK,
             font_size=26,
