@@ -86,11 +86,11 @@ class Level2 (Level):
             goal = heappop(self.listIdentifiedHiders)
             self.goalPosition = goal.state
             heappush(self.listIdentifiedHiders, goal)
-            self.path = self.getShortestPath(self.seekerPosition, self.goalPosition)
+            self.path = self.getShortestPath(self.seekerPosition, self.goalPosition, self.visitedMatrix)
             self.pathMove = 0
         else:
             self.goalPosition: tuple[int, int] = self.getNearestWallIntersection()
-            self.path: list[tuple[int, int]] = self.getShortestPath(self.seekerPosition, self.goalPosition)
+            self.path: list[tuple[int, int]] = self.getShortestPath(self.seekerPosition, self.goalPosition, self.visitedMatrix)
             self.pathMove: int = 0
             
     def hiderTakeTurn (self, hiderPosition: tuple[int, int]):
@@ -105,292 +105,6 @@ class Level2 (Level):
             self.announcementDict[announcement].append(hiderPosition)
     
     def getNearestWallIntersection (self) -> tuple[int, int]:
-        def countNumWallsBetweenTwoPositions (position1: tuple[int, int], position2: tuple[int, int]):
-            X1 = position1[1]
-            X2 = position2[1]
-            Y1 = position1[0]
-            Y2 = position2[0]
-            
-            #! Calculate the number of walls in the shortest path (without any walls in the map) from the current seeker position to this wall intersection
-            numWallIntersectionsBetweenThem = 0
-            if (X2 <= X1 and Y1 >= Y2):
-                if (Y1 - Y2 > X1 - X2):
-                    temp1 = 0
-                    temp2 = 0
-                    
-                    for j in range (0, X1 - X2 + 1):
-                        if (self.map.matrix[Y1 - j][X1 - j] == WALL):
-                            temp1 += 1
-                    for j in range (1, (Y1 - Y2) - (X1 - X2) + 1):
-                        if (self.map.matrix[Y1 - (X1 - X2) - j][X2] == WALL):
-                            temp1 += 1 
-                    
-                    for j in range (0, (Y1 - Y2) - (X1 - X2) + 1):
-                        if (self.map.matrix[Y1 - j][X1] == WALL):
-                            temp2 += 1 
-                    for j in range (1, X1 - X2 + 1):
-                        if (self.map.matrix[Y2 + (X1 - X2) - j][X1 - j] == WALL):
-                            temp2 += 1
-                            
-                    numWallIntersectionsBetweenThem = min(temp1, temp2)
-                    
-                else:
-                    temp1 = 0
-                    temp2 = 0
-                    for j in range (0, (X1 - X2) - (Y1 - Y2) + 1):
-                        if (self.map.matrix[Y1][X1 - j] == WALL):
-                            temp1 += 1
-                    for j in range (1, Y1 - Y2 + 1):
-                        if (self.map.matrix[Y1 - j][X2 + Y1 - Y2 - j] == WALL):
-                            temp1 += 1
-                    
-                    for j in range (0, Y1 - Y2 + 1):
-                        if (self.map.matrix[Y1 - j][X1 - j] == WALL):
-                            temp2 += 1     
-                    for j in range (1, (X1 - X2) - (Y1 - Y2) + 1):
-                        if (self.map.matrix[Y2][X1 - (Y1 - Y2) - j] == WALL):
-                            temp2 += 1
-                            
-                    numWallIntersectionsBetweenThem = min(temp1, temp2)
-                
-            elif (X2 >= X1 and Y1 >= Y2):
-                if (Y1 - Y2 > X2 - X1):
-                    temp1 = 0
-                    temp2 = 0
-                    
-                    for j in range (0, (Y1 - Y2) - (X2 - X1) + 1):
-                        if (self.map.matrix[Y1 - j][X1] == WALL):
-                            temp1 += 1
-                    for j in range (1, X2 - X1 + 1):
-                        if (self.map.matrix[Y2 + (X2 - X1) - j][X1 + j] == WALL):
-                            temp1 += 1
-                    
-                    for j in range (0, X2 - X1 + 1):
-                        if (self.map.matrix[Y1 - j][X1 + j] == WALL):
-                            temp2 += 1     
-                    for j in range (1, (Y1 - Y2) - (X2 - X1) + 1):
-                        if (self.map.matrix[Y1 - (X2 - X1) - j][X2] == WALL):
-                            temp2 += 1
-                            
-                    numWallIntersectionsBetweenThem = min(temp1, temp2)        
-                    
-                else:
-                    temp1 = 0
-                    temp2 = 0
-                    
-                    for j in range (0, Y1 - Y2 + 1):
-                        if (self.map.matrix[Y1 - j][X1 + j] == WALL):
-                            temp1 += 1
-                    for j in range (1, X2 - X1 - (Y1 - Y2) + 1):
-                        if (self.map.matrix[Y2][X1 + Y1 - Y2 + j] == WALL):
-                            temp1 += 1
-                        
-                    for j in range (0, X2 - X1 - (Y1 - Y2) + 1):
-                        if (self.map.matrix[Y1][X1 + j] == WALL):
-                            temp2 += 1   
-                    for j in range (1, Y1 - Y2 + 1):
-                        if (self.map.matrix[Y1 - j][X2 - (Y1 - Y2) + j] == WALL):
-                            temp2 += 1
-                            
-                    numWallIntersectionsBetweenThem = min(temp1, temp2)        
-                        
-            elif (X2 >= X1 and Y2 >= Y1):
-                if (Y2 - Y1 > X2 - X1):
-                    temp1 = 0
-                    temp2 = 0
-                    
-                    for j in range (0, X2 - X1 + 1):
-                        if (self.map.matrix[Y1 + j][X1 + j] == WALL):
-                            temp1 += 1
-                    for j in range (1, Y2 - Y1 - (X2 - X1) + 1):
-                        if (self.map.matrix[Y1 + (X2 - X1) + j][X2] == WALL):
-                            temp1 += 1
-                    
-                    for j in range (0, Y2 - Y1 - (X2 - X1) + 1):
-                        if (self.map.matrix[Y1 + j][X1] == WALL):
-                            temp2 += 1      
-                    for j in range (1, X2 - X1 + 1):
-                        if (self.map.matrix[Y2 - (X2 - X1) + j][X1 + j] == WALL):
-                            temp2 += 1
-                            
-                    numWallIntersectionsBetweenThem = min(temp1, temp2)
-                    
-                else:
-                    temp1 = 0
-                    temp2 = 0
-                    
-                    for j in range (0, (X2 - X1) - (Y2 - Y1) + 1):
-                        if (self.map.matrix[Y1][X1 + j] == WALL):
-                            temp1 += 1
-                    for j in range (1, Y2 - Y1 + 1):
-                        if (self.map.matrix[Y1 + j][X2 - (Y2 - Y1) + j] == WALL):
-                            temp1 += 1
-                    
-                    for j in range (0, Y2 - Y1 + 1):
-                        if (self.map.matrix[Y1 + j][X1 + j] == WALL):
-                            temp2 += 1       
-                    for j in range (1, (X2 - X1) - (Y2 - Y1) + 1):
-                        if (self.map.matrix[Y2][X1 + (Y2 - Y1) + j] == WALL):
-                            temp2 += 1
-                    
-                    numWallIntersectionsBetweenThem = min(temp1, temp2)
-                        
-            elif (X1 >= X2 and Y2 >= Y1):
-                if (Y2 - Y1 > X1 - X2):
-                    temp1 = 0
-                    temp2 = 0
-                    
-                    for j in range (0, Y2 - Y1 - (X1 - X2) + 1):
-                        if (self.map.matrix[Y1 + j][X1] == WALL):
-                            temp1 += 1
-                    for j in range (1, X1 - X2 + 1):
-                        if (self.map.matrix[Y2 - (X1 - X2) + j][X1 - j] == WALL):
-                            temp1 += 1
-                    
-                    for j in range (0, X1 - X2 + 1):
-                        if (self.map.matrix[Y1 + j][X1 - j] == WALL):
-                            temp2 += 1        
-                    for j in range (1, Y2 - Y1 - (X1 - X2) + 1):
-                        if (self.map.matrix[Y1 + (X1 - X2) + j][X2] == WALL):
-                            temp2 += 1
-                    
-                    numWallIntersectionsBetweenThem = min(temp1, temp2)       
-                    
-                else:
-                    temp1 = 0
-                    temp2 = 0
-                    
-                    for j in range (0, Y2 - Y1 + 1):
-                        if (self.map.matrix[Y1 + j][X1 - j] == WALL):
-                            temp1 += 1
-                    for j in range (1, X1 - X2 - (Y2 - Y1) + 1):
-                        if (self.map.matrix[Y2][X1 - (Y2 - Y1) - j] == WALL):
-                            temp1 += 1
-                    
-                    for j in range (0, X1 - X2 - (Y2 - Y1) + 1):
-                        if (self.map.matrix[Y1][X1 - j] == WALL):
-                            temp2 += 1       
-                    for j in range (1, Y2 - Y1 + 1):
-                        if (self.map.matrix[Y1 + j][X2 + (Y2 - Y1) - j] == WALL):
-                            temp2 += 1
-                    
-                    numWallIntersectionsBetweenThem = min(temp1, temp2)         
-            
-            temp1 = 0
-            temp2 = 0           
-            if (X2 <= X1 and Y1 >= Y2):
-                for i in range (0, X1 - X2 + 1):
-                    if (self.map.matrix[Y1][X1 - i] == WALL):
-                        temp1 += 1
-                for i in range (1, Y1 - Y2 + 1):
-                    if (self.map.matrix[Y1 - i][X2] == WALL):
-                        temp1 += 1
-                        
-                for i in range (0, Y1 - Y2 + 1):
-                    if (self.map.matrix[Y1 - i][X1] == WALL):
-                        temp2 += 1
-                for i in range (1, X1 - X2 + 1):
-                    if (self.map.matrix[Y2][X1 - i] == WALL):
-                        temp2 += 1
-                
-            elif (X2 >= X1 and Y1 >= Y2):
-                for i in range (0, X2 - X1 + 1):
-                    if (self.map.matrix[Y1][X1 + i] == WALL):
-                        temp1 += 1
-                for i in range (1, Y1 - Y2 + 1):
-                    if (self.map.matrix[Y1 - i][X2] == WALL):
-                        temp1 += 1
-                        
-                for i in range (0, Y1 - Y2 + 1):
-                    if (self.map.matrix[Y1 - i][X1] == WALL):
-                        temp2 += 1
-                for i in range (1, X2 - X1 + 1):
-                    if (self.map.matrix[Y2][X1 + i] == WALL):
-                        temp2 += 1
-                        
-            elif (X2 >= X1 and Y2 >= Y1):
-                for i in range (0, X2 - X1 + 1):
-                    if (self.map.matrix[Y1][X1 + i] == WALL):
-                        temp1 += 1
-                for i in range (1, Y2 - Y1 + 1):
-                    if (self.map.matrix[Y1 + i][X2] == WALL):
-                        temp1 += 1
-                        
-                for i in range (0, Y2 - Y1 + 1):
-                    if (self.map.matrix[Y1 + i][X1] == WALL):
-                        temp2 += 1
-                for i in range (1, X2 - X1 + 1):
-                    if (self.map.matrix[Y2][X1 + i] == WALL):
-                        temp2 += 1
-                        
-            elif (X1 >= X2 and Y2 >= Y1):
-                for i in range (0, X1 - X2 + 1):
-                    if (self.map.matrix[Y1][X1 - i] == WALL):
-                        temp1 += 1
-                for i in range (1, Y2 - Y1 + 1):
-                    if (self.map.matrix[Y1 + i][X2] == WALL):
-                        temp1 += 1
-                        
-                for i in range (0, Y2 - Y1 + 1):
-                    if (self.map.matrix[Y1 + i][X1] == WALL):
-                        temp2 += 1
-                for i in range (1, X1 - X2 + 1):
-                    if (self.map.matrix[Y2][X1 - i] == WALL):
-                        temp2 += 1
-            
-            numWallIntersectionsBetweenThem = min(numWallIntersectionsBetweenThem, min(temp1, temp2))
-            return numWallIntersectionsBetweenThem
-        
-        def checkCorner (position: tuple[int, int]) -> bool:
-            row = position[0]
-            col = position[1]
-            numRows = self.map.numRows
-            numCols = self.map.numCols
-            if (
-                (row - 1 >= 0 and self.map.matrix[row - 1][col] == WALL and row + 1 < numRows and self.map.matrix[row + 1][col] == WALL and col - 1 >= 0 and self.map.matrix[row][col - 1] == WALL)
-                or 
-                (row - 1 >= 0 and self.map.matrix[row - 1][col] == WALL and row + 1 < numRows and self.map.matrix[row + 1][col] == WALL and col + 1 < numCols and self.map.matrix[row][col + 1] == WALL)
-                or
-                (col - 1 >= 0 and self.map.matrix[row][col - 1] == WALL and col + 1 < numCols and self.map.matrix[row][col + 1] == WALL and row - 1 >= 0 and self.map.matrix[row - 1][col] == WALL)
-                or
-                (col - 1 >= 0 and self.map.matrix[row][col - 1] == WALL and col + 1 < numCols and self.map.matrix[row][col + 1] == WALL and row + 1 < numRows and self.map.matrix[row + 1][col] == WALL)
-                or
-                (row == 0 and col - 1 >= 0 and self.map.matrix[row][col - 1] == WALL and row + 1 < numRows and self.map.matrix[row + 1][col] == WALL)
-                or
-                (row == 0 and col + 1 < numCols and self.map.matrix[row][col + 1] == WALL and row + 1 < numRows and self.map.matrix[row + 1][col] == WALL)
-                or
-                (row == numRows - 1 and col - 1 >= 0 and self.map.matrix[row][col - 1] == WALL and row - 1 >= 0 and self.map.matrix[row - 1][col] == WALL)
-                or
-                (row == numRows - 1 and col + 1 < numCols and self.map.matrix[row][col + 1] == WALL and row - 1 >= 0 and self.map.matrix[row - 1][col] == WALL)
-                or
-                (col == 0 and col + 1 < numCols and self.map.matrix[row][col + 1] == WALL and row + 1 < numRows and self.map.matrix[row + 1][col] == WALL)
-                or
-                (col == 0 and col + 1 < numCols and self.map.matrix[row][col + 1] == WALL and row - 1 >= 0 and self.map.matrix[row - 1][col] == WALL)
-                or 
-                (col == numCols - 1 and col - 1 >= 0 and self.map.matrix[row][col - 1] == WALL and row + 1 < numRows and self.map.matrix[row + 1][col] == WALL)
-                or
-                (col == numCols - 1 and col - 1 >= 0 and self.map.matrix[row][col - 1] == WALL and row - 1 >= 0 and self.map.matrix[row - 1][col] == WALL)
-                or
-                ((row, col) == (0, 0) and self.map.matrix[0][1] == WALL)
-                or
-                ((row, col) == (0, 0) and self.map.matrix[1][0] == WALL)
-                or
-                ((row, col) == (0, numCols - 1) and self.map.matrix[0][numCols - 2] == WALL)
-                or
-                ((row, col) == (0, numCols - 1) and self.map.matrix[1][numCols - 1] == WALL)
-                or
-                ((row, col) == (numRows - 1, 0) and self.map.matrix[numRows - 2][0] == WALL)
-                or
-                ((row, col) == (numRows - 1, 0) and self.map.matrix[numRows - 1][1] == WALL)
-                or
-                ((row, col) == (numRows - 1, numCols - 1) and self.map.matrix[numRows - 2][numCols - 1] == WALL)
-                or
-                ((row, col) == (numRows - 1, numCols - 1) and self.map.matrix[numRows - 1][numCols - 2] == WALL)
-            ):
-                return True
-            
-            return False
-        
         #! Add all unvisited wall intersections to a list
         unvisitedWallIntersections: list[tuple[tuple[int, int], int]] = []
         startPositionForFinding = None
@@ -403,42 +117,28 @@ class Level2 (Level):
             if (not self.visitedMatrix[intersection[0]][intersection[1]]):
                 listObservableCells = self.getObservableCells(intersection)
                 
-                numWalls = countNumWallsBetweenTwoPositions(startPositionForFinding, intersection)
+                numWalls = self.countNumWallsBetweenTwoPositions(startPositionForFinding, intersection)
                 for cell in listObservableCells:
-                    numWalls = min(countNumWallsBetweenTwoPositions(startPositionForFinding, cell), numWalls)
+                    numWalls = min(self.countNumWallsBetweenTwoPositions(startPositionForFinding, cell), numWalls)
                 unvisitedWallIntersections.append((intersection, numWalls))
                 
         nearestWallIntersection: tuple[int, int] = None
         minHeuristic = 1000000000
         AStar = None
         for intersection in unvisitedWallIntersections:
-            isCorner = checkCorner(intersection[0])
+            isCorner = self.checkCorner(intersection[0])
             if (intersection[1] - 0.9 * isCorner < minHeuristic):
                 nearestWallIntersection = intersection[0]
-                shorestPath = self.getShortestPath(startPositionForFinding, nearestWallIntersection)
+                shorestPath = self.getShortestPath(startPositionForFinding, nearestWallIntersection, self.visitedMatrix)
                 AStar = len(shorestPath)
                 minHeuristic = intersection[1] - 0.9 * isCorner
             elif (intersection[1] - 0.9 * isCorner == minHeuristic):
-                shorestPath = self.getShortestPath(startPositionForFinding, intersection[0])
+                shorestPath = self.getShortestPath(startPositionForFinding, intersection[0], self.visitedMatrix)
                 if (AStar is None or (AStar is not None and len(shorestPath) < AStar)):
                     nearestWallIntersection = intersection[0]
                     AStar = len(shorestPath)
         
         return nearestWallIntersection
-            
-    def getShortestPath (self, startPosition: tuple[int, int], goalPosition: tuple[int, int]) -> list[tuple[int, int]]:
-        #! Be sure that the path will be from the next step of the start position to the goal position
-        goal = A_Star(startPosition, goalPosition, self.map.matrix, self.visitedMatrix)
-        shortestPath = []
-        
-        while (goal is not None):
-            shortestPath.append(goal.state)
-            goal = goal.parent
-        
-        shortestPath = shortestPath[:-1]
-        shortestPath = shortestPath[::-1]
-        
-        return shortestPath
     
     def identifyObservableHiders (self):
         listHiderPositions: list[Hider] = []
@@ -512,7 +212,7 @@ class Level2 (Level):
             goal = heappop(self.listIdentifiedHiders)
             self.goalPosition = goal.state
             heappush(self.listIdentifiedHiders, goal)
-            self.path = self.getShortestPath(self.seekerPosition, self.goalPosition)
+            self.path = self.getShortestPath(self.seekerPosition, self.goalPosition, self.visitedMatrix)
             self.pathMove = 0
             return
         
@@ -536,12 +236,12 @@ class Level2 (Level):
                     goal = heappop(self.listIdentifiedHiders)
                     self.goalPosition = goal.state
                     heappush(self.listIdentifiedHiders, goal)
-                    self.path = self.getShortestPath(self.seekerPosition, self.goalPosition)
+                    self.path = self.getShortestPath(self.seekerPosition, self.goalPosition, self.visitedMatrix)
                     self.pathMove = 0
                 else:
                     self.goalPosition = self.getNearestWallIntersection()
                     if (self.goalPosition is not None):
-                        self.path = self.getShortestPath(self.seekerPosition, self.goalPosition)
+                        self.path = self.getShortestPath(self.seekerPosition, self.goalPosition, self.visitedMatrix)
                         self.pathMove = 0
                     else:
                         level = 1
@@ -567,7 +267,7 @@ class Level2 (Level):
                             level = level + 1
                             
                         if (self.goalPosition is not None):
-                            self.path = self.getShortestPath(self.seekerPosition, self.goalPosition)
+                            self.path = self.getShortestPath(self.seekerPosition, self.goalPosition, self.visitedMatrix)
                             self.pathMove = 0
                         else:
                             raise Exception ("Your map is missing the hider")
@@ -575,7 +275,7 @@ class Level2 (Level):
             else:
                 self.goalPosition = self.getNearestWallIntersection()
                 if (self.goalPosition is not None):
-                    self.path = self.getShortestPath(self.seekerPosition, self.goalPosition)
+                    self.path = self.getShortestPath(self.seekerPosition, self.goalPosition, self.visitedMatrix)
                     self.pathMove = 0
                 else:
                     level = 1
@@ -601,7 +301,7 @@ class Level2 (Level):
                         level = level + 1
                         
                     if (self.goalPosition is not None):
-                        self.path = self.getShortestPath(self.seekerPosition, self.goalPosition)
+                        self.path = self.getShortestPath(self.seekerPosition, self.goalPosition, self.visitedMatrix)
                         self.pathMove = 0
                     else:
                         raise Exception ("Your map is missing the hider")

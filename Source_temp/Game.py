@@ -4,6 +4,7 @@ from time import sleep
 
 from Level1 import *
 from Level2 import *
+from Level3 import *
 
 if len(sys.argv) != 2:
     sys.exit("Usage: python Game.py input.txt")
@@ -87,7 +88,6 @@ while True:
                 level = 2
             elif Level_3.collidepoint(mouse):
                 level = 3
-                sys.exit()
             elif Level_4.collidepoint(mouse):
                 level = 4
                 sys.exit()
@@ -407,7 +407,7 @@ while True:
                     
                     pygame.display.flip()
                     
-                    sleep(0.2)
+                    sleep(0.075)
                     if (game.takeTurn == SEEKER):
                         for cell in game.listObservableCells:
                             rect = blocks[cell[0]][cell[1]][0]
@@ -489,8 +489,229 @@ while True:
         
         #! Level 3
         elif (level == 3):
-            pass
-        
+            if (len(map.listHiderPositions) < 2):
+                raise Exception("This is not a map for Level 3")
+            
+            game = Level3(map)
+            cellSize = (int(height / map.numRows), int(1000 / map.numCols))
+            
+            #! Draw a frame
+            Frame = pygame.Rect(0, 0, cellSize[1] * map.numCols, cellSize[0] * map.numRows)
+            pygame.draw.rect(screen, WHITE, Frame)
+            
+            #! Draw the map
+            blocks = []
+            for row in range (0, map.numRows):
+                temp = []
+                for col in range (0, map.numCols):
+                    #! Draw empty cells
+                    if (map.matrix[row][col] == EMPTY):
+                        rect = pygame.Rect(
+                            col * cellSize[1],
+                            row * cellSize[0],
+                            cellSize[1], cellSize[0]
+                        )
+                        pygame.draw.rect(screen, BLACK, rect, 2)
+                        temp.append((rect, BLACK, 2))
+                    
+                    #! Draw wall cells
+                    elif (map.matrix[row][col] == WALL):
+                        rect = pygame.Rect(
+                            col * cellSize[1],
+                            row * cellSize[0],
+                            cellSize[1], cellSize[0]
+                        )
+                        
+                        check = False
+                        #? Check whether map.matrix[row][col] is a position of any obstacle or not
+                        for k in range (0, len(map.obstacles)):
+                            if (row + 1 >= map.obstacles[k][0] and row + 1 <= map.obstacles[k][2] and
+                                col + 1 >= map.obstacles[k][1] and col + 1 <= map.obstacles[k][3]):
+                                check = True
+                                break
+                            
+                        if (not check):
+                            pygame.draw.rect(screen, GRAY, rect)
+                            temp.append((rect, GRAY, None))
+                        else:
+                            pygame.draw.rect(screen, SKINCOLOR, rect)
+                            temp.append((rect, SKINCOLOR, None))
+                        
+                    #! Draw hider cell
+                    elif (map.matrix[row][col] == HIDER):
+                        rect = pygame.Rect(
+                            col * cellSize[1],
+                            row * cellSize[0],
+                            cellSize[1], cellSize[0]
+                        )
+                        pygame.draw.rect(screen, BLACK, rect, 2)
+                        scaled_hider_image = pygame.transform.scale(hider_image, (cellSize[1], cellSize[0]))
+                        screen.blit(scaled_hider_image, (col * cellSize[1], row * cellSize[0]))
+                        temp.append((rect, BLACK, 2))
+                    
+                    else:
+                        rect = pygame.Rect(
+                            col * cellSize[1],
+                            row * cellSize[0],
+                            cellSize[1], cellSize[0]
+                        )
+                        pygame.draw.rect(screen, BLACK, rect, 2)
+                        scaled_seeker_image = pygame.transform.scale(seeker_image, (cellSize[1], cellSize[0]))
+                        screen.blit(scaled_seeker_image, (col * cellSize[1], row * cellSize[0]))
+                        temp.append((rect, BLACK, 2))
+                        
+                blocks.append(temp)
+            
+            Start = pygame.Rect(cellSize[1] * map.numCols + (width - cellSize[1] * map.numCols) / 2 - 50, height / 2 - 25, 100, 50)
+            startLevel = mediumFont.render("Start", True, BLACK)
+            startLevelRect = startLevel.get_rect()
+            startLevelRect.center = Start.center
+            pygame.draw.rect(screen, WHITE, Start)
+            screen.blit(startLevel, startLevelRect)
+            
+            pygame.display.flip()
+            
+            startGame = False
+            click, _, _ = pygame.mouse.get_pressed()
+            if click == 1:
+                mouse = pygame.mouse.get_pos()
+                if Start.collidepoint(mouse):
+                    startGame = True
+            
+            if (startGame):
+                #! Hide the Start cell
+                Start = pygame.Rect(cellSize[1] * map.numCols + (width - cellSize[1] * map.numCols) / 2 - 50, height / 2 - 25, 100, 50)
+                startLevel = mediumFont.render("", True, BLACK)
+                startLevelRect = startLevel.get_rect()
+                startLevelRect.center = Start.center
+                pygame.draw.rect(screen, LIGHTPINK, Start)
+                screen.blit(startLevel, startLevelRect)
+                
+                pygame.display.flip()
+                        
+                while (not game.giveUp):
+                    #! Draw a score cell
+                    Score = pygame.Rect(cellSize[1] * map.numCols + (width - cellSize[1] * map.numCols) / 2 - 70, height / 3 - 25, 140, 50)
+                    scoreLevel = mediumFont.render(f"Score: {game.score}", True, BLACK)
+                    scoreLevelRect = scoreLevel.get_rect()
+                    scoreLevelRect.center = Score.center
+                    pygame.draw.rect(screen, WHITE, Score)
+                    screen.blit(scoreLevel, scoreLevelRect)
+                    
+                    pygame.display.flip()
+                    
+                    tempListHiderPositions = []
+                    for hider in game.listHiders:
+                        tempListHiderPositions.append(hider.state)
+                        
+                    sleep(0.075)
+                    if (game.takeTurn == SEEKER):
+                            
+                        for row in range (0, game.map.numRows):
+                            for col in range (0, game.map.numCols):
+                                if (game.visitedMatrix[row][col] == True and game.map.matrix[row][col] != WALL):
+                                    rect = blocks[row][col][0]
+                                    pygame.draw.rect(screen, GREEN, rect)
+                                    pygame.draw.rect(screen, BLACK, rect, 2)
+                                
+                        pygame.display.flip()
+                        
+                        #! Draw the current position of the seeker
+                        col = game.seekerPosition[1]
+                        row = game.seekerPosition[0]
+                        
+                        rect = blocks[row][col][0]
+                        pygame.draw.rect(screen, WHITE, rect)
+                        pygame.draw.rect(screen, BLACK, rect, 2)
+                        
+                        game.seekerTakeTurn()
+                        
+                        #! Draw the current position of the seeker
+                        col = game.seekerPosition[1]
+                        row = game.seekerPosition[0]
+                        
+                        rect = pygame.Rect(
+                            col * cellSize[1],
+                            row * cellSize[0],
+                            cellSize[1], cellSize[0]
+                        )
+                        pygame.draw.rect(screen, BLACK, rect, 2)
+                        scaled_seeker_image = pygame.transform.scale(seeker_image, (cellSize[1], cellSize[0]))
+                        screen.blit(scaled_seeker_image, (col * cellSize[1], row * cellSize[0]))
+                            
+                        pygame.display.flip()
+                        
+                        game.takeTurn = HIDER
+                        if (len(game.listHiders) != 0 and game.seekerPosition not in tempListHiderPositions):
+                            game.numSeekerSteps = game.numSeekerSteps + 1
+                            game.score = game.score - 1
+                        else:
+                            game.score = game.score + 20
+                            if (len(game.listHiders) == 0):
+                                sleep(5)
+                                break
+
+                    else:
+                        #! Draw the current position of each hider
+                        for hider in game.listHiders:
+                            col = hider.state[1]
+                            row = hider.state[0]
+                            
+                            rect = blocks[row][col][0]
+                            pygame.draw.rect(screen, WHITE, rect)
+                            pygame.draw.rect(screen, BLACK, rect, 2)
+                            
+                        for hider in game.listHiders:
+                            game.hiderTakeTurn(hider)
+                        game.takeTurn = SEEKER
+                        game.numHiderSteps = game.numHiderSteps + 1
+                        
+                        #! Draw the current position of each hider
+                        for hider in game.listHiders:
+                            col = hider.state[1]
+                            row = hider.state[0]
+                            
+                            rect = pygame.Rect(
+                                col * cellSize[1],
+                                row * cellSize[0],
+                                cellSize[1], cellSize[0]
+                            )
+                            pygame.draw.rect(screen, BLACK, rect, 2)
+                            scaled_hider_image = pygame.transform.scale(hider_image, (cellSize[1], cellSize[0]))
+                            screen.blit(scaled_hider_image, (col * cellSize[1], row * cellSize[0]))
+                        
+                        if (game.numHiderSteps != 0 and game.numHiderSteps != 1 and 
+                            (game.numHiderSteps % 8 == 0 or game.numHiderSteps % 8 == 1)):
+                            for announcement in game.announcementDict:
+                                scaled_announcement_image = pygame.transform.scale(announcement_image, (cellSize[1], cellSize[0]))
+                                screen.blit(scaled_announcement_image, (announcement[1] * cellSize[1], announcement[0] * cellSize[0]))
+                            
+                            pygame.display.flip()
+                        else:
+                            #! After 2 steps, the announcement disappears
+                            if (len(game.announcementDict) != 0):
+                                for announcement in game.announcementDict:
+                                    rect = blocks[announcement[0]][announcement[1]][0]
+                                    color = blocks[announcement[0]][announcement[1]][1]
+                                    w = blocks[announcement[0]][announcement[1]][2]
+                                    
+                                    if (w is not None):
+                                        pygame.draw.rect(screen, WHITE, rect)
+                                        pygame.draw.rect(screen, color, rect, w)
+                                    else:
+                                        pygame.draw.rect(screen, color, rect)
+                                
+                                pygame.display.flip()
+                                game.announcementDict = dict()
+                                
+                        if (len(game.listHiders) == 0 or game.seekerPosition in tempListHiderPositions):
+                            game.score = game.score + 20
+                            if (len(game.listHiders) == 0):
+                                sleep(5)
+                                break
+                if (game.giveUp):
+                    sleep(5)
+                
         #! Level 4
         else:
             pass

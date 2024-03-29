@@ -13,7 +13,8 @@ LIGHTPINK = (255, 182, 193)
 SKINCOLOR = (255, 224, 189)
 RED = (255, 0, 0)
 GREEN = (0, 171, 28)
-            
+YELLOW = (255, 215, 0)
+BROWN = (128, 64, 0)
             
 def manhattanDistance (point1: tuple[int, int], point2: tuple[int, int]):
     return abs(point2[0] - point1[0]) + abs(point2[1] - point1[1])
@@ -36,7 +37,7 @@ def getValidNeighbors (state: tuple[int, int], map: list[list[int]]) -> list[tup
         return result
 
 class Node:
-    def __init__ (self, state: tuple[int, int], parent, goal: tuple[int, int], visited: bool):
+    def __init__ (self, state: tuple[int, int], parent, goal: tuple[int, int], visited: bool = 0):
         self.state = state
         self.parent = parent
         self.pathCost = None
