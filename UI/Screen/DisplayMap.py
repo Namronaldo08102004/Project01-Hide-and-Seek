@@ -145,8 +145,8 @@ class DisplayMap:
                     self.cur_map[x][y] = 6
             self.printMap(score)
 
-            self.cur_map = recov_obser(mp=self.cur_map, loc=cur[3])
-            self.cur_map = recov_obser(mp=self.cur_map, loc=hider_obv)
+            # self.cur_map = recov_obser(mp=self.cur_map, loc=cur[3])
+            # self.cur_map = recov_obser(mp=self.cur_map, loc=hider_obv)
 
             # Recover announcement
             if cur[4]:
@@ -181,14 +181,16 @@ class DisplayMap:
         # In lại ra màn hình
         self.widgets.__render__(self.display)
         pygame.display.flip()
+        for i in range(len(self.cur_map)):
+            broke = False
+            for j in range(len(self.cur_map[0])):
+                if self.cur_map[i][j] == OVERLAP:
+                    broke = True
+                    break
+            if broke:
+                pygame.time.wait(CHASE_RANGE_TIME)
+                break
         pygame.time.wait(DELAY_TIME)
 
-    def getScore(self):
-        return self.score
-
-    def checkQuit(self):
-        while not self.stop_event.is_set():
-            for ev in pygame.event.get():
-                if ev.type == pygame.QUIT:
-                    pygame.quit()
-                    quit()
+    def getResult(self):
+        return self.score, self.give_up
