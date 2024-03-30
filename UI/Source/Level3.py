@@ -445,8 +445,26 @@ class Level3 (Level):
                     return
             
             else:
-                self.gotoHider = False
+                self.seekerGoalPosition = self.getNearestWallIntersection()
+                if (self.seekerGoalPosition is not None):
+                    self.seekerPath = self.getShortestPath(self.seekerPosition, self.seekerGoalPosition)
+                    self.seekerPathMove = 0
+                else:
+                    NextPosition: tuple[int, int] = None
+                    maxNumObservableCells = -1
+                    listValidNeighbors = getValidNeighbors(self.seekerPosition, self.map.matrix)
+                    for cell in listValidNeighbors:
+                        observable = self.getObservableCells(cell)
+                        if (len(observable) > maxNumObservableCells):
+                            maxNumObservableCells = len(observable)
+                            NextPosition = cell
+                            
+                    self.seekerGoalPosition = NextPosition
+                    self.seekerPath: list[tuple[int, int]] = [self.seekerGoalPosition]
+                    self.seekerPathMove: int = 0
+                    
                 self.gotoIntersection = True
+                self.gotoHider = False
                 return
 
         checkNoHider: bool = True
