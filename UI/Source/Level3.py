@@ -243,19 +243,21 @@ class Level3 (Level):
         elif (self.takeTurn == HIDER):
             listHiderValidNeighbor = getValidNeighbors(hiderPosition, self.map.matrix)
             while (True):
-                check = False
+                removedNeighbor = None
+                
                 for neighbor in listHiderValidNeighbor:
-                    for hider in self.listHiders:
-                        if (neighbor == hider.state):
-                            listHiderValidNeighbor.remove(neighbor)
-                            check = True
+                    for Hider in self.listHiders:
+                        if (neighbor == Hider.state):
+                            removedNeighbor = neighbor
                             break
                             
-                    if (check):
+                    if (removedNeighbor is not None):
                         break
                 
-                if (not check):
+                if (removedNeighbor is None):
                     break
+                else:
+                    listHiderValidNeighbor.remove(removedNeighbor)
             
             listSeekerValidNeighbor = getValidNeighbors(seekerPosition, self.map.matrix)
 
@@ -578,6 +580,23 @@ class Level3 (Level):
             NextPosition: tuple[int, int] = hider.state
             maxNumObservableCells = len(hider.hiderObservableCells)
             listValidNeighbors = getValidNeighbors(hider.state, self.map.matrix)
+            
+            while (True):
+                removedNeighbor = None
+                
+                for neighbor in listValidNeighbors:
+                    for Hider in self.listHiders:
+                        if (neighbor == Hider.state):
+                            removedNeighbor = neighbor
+                            break
+                            
+                    if (removedNeighbor is not None):
+                        break
+                
+                if (removedNeighbor is None):
+                    break
+                else:
+                    listValidNeighbors.remove(removedNeighbor)
             
             for cell in listValidNeighbors:
                 observable = hider.getObservableCellsOfHider(cell)
