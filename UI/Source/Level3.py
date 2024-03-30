@@ -228,14 +228,23 @@ class Level3 (Level):
             bestNextPosition = None
             minX = self.map.numRows * self.map.numCols
             Y = self.map.numRows * self.map.numCols
+            minNumCellsHiderCanRunToNotBeCaught = self.map.numRows * self.map.numCols
             
             for i in range (0, len(listSeekerValidNeighbor)):
                 if (listTuplesWithBestY[i][0] < minX):
                     minX = listTuplesWithBestY[i][0]
                     Y = listTuplesWithBestY[i][1]
+                    minNumCellsHiderCanRunToNotBeCaught = len(list(set(listHiderValidNeighbor) - set(getValidNeighbors(listSeekerValidNeighbor[i], self.map.matrix))))
+                    
                     bestNextPosition = listSeekerValidNeighbor[i]
                 elif (listTuplesWithBestY[i][0] == minX and listTuplesWithBestY[i][1] < Y):
                     Y = listTuplesWithBestY[i][1]
+                    minNumCellsHiderCanRunToNotBeCaught =  len(list(set(listHiderValidNeighbor) - set(getValidNeighbors(listSeekerValidNeighbor[i], self.map.matrix))))
+                    
+                    bestNextPosition = listSeekerValidNeighbor[i]
+                elif (listTuplesWithBestY[i][0] == minX and listTuplesWithBestY[i][1] == Y
+                      and len(list(set(listHiderValidNeighbor) - set(getValidNeighbors(listSeekerValidNeighbor[i], self.map.matrix)))) < minNumCellsHiderCanRunToNotBeCaught):
+                    minNumCellsHiderCanRunToNotBeCaught = len(list(set(listHiderValidNeighbor) - set(getValidNeighbors(listSeekerValidNeighbor[i], self.map.matrix))))
                     bestNextPosition = listSeekerValidNeighbor[i]
                         
             return bestNextPosition
@@ -289,6 +298,7 @@ class Level3 (Level):
             Y = -1
             maxNumObservableCells = -1
             isIntersection: bool = None
+            
             for i in range (0, len(listHiderValidNeighbor)):
                 if (listTuplesWithBestY[i][0] > maxX):
                     maxX = listTuplesWithBestY[i][0]
@@ -337,6 +347,20 @@ class Level3 (Level):
             
             return False
         
+        def union (list1: list[Hider], list2: list[Hider]) -> list[Hider]:
+            for cell in list2:
+                if cell not in list1:
+                    list1.append(cell)
+                    
+            return list1
+        
+        def diff (list1: list[Hider], list2: list[Hider]) -> list[Hider]:
+            for cell in list2:
+                if cell in list1:
+                    list1.remove(cell)
+                    
+            return list1
+        
         if (len(self.ignoredHiders) == len(self.listHiders)):
             self.giveUp = True
             return
@@ -362,8 +386,8 @@ class Level3 (Level):
                                     listCorrespondingHiders.append(hider)
                                     break
                         
-                self.listIdentifiedHiders = list(set(self.listIdentifiedHiders).union(set(listCorrespondingHiders)))
-            self.listIdentifiedHiders = list(set(self.listIdentifiedHiders) - set(self.ignoredHiders))
+                self.listIdentifiedHiders = union(self.listIdentifiedHiders, listCorrespondingHiders)
+            self.listIdentifiedHiders = diff(self.listIdentifiedHiders, self.ignoredHiders)
             
             #! Observed any hider --> Conduct to touch that hider
             if (len(self.listIdentifiedHiders) != 0 and not checkGoalPositionInListIdentifiedHiders(self.seekerGoalPosition, self.listIdentifiedHiders)):
@@ -373,7 +397,7 @@ class Level3 (Level):
             
         elif (self.gotoHider):
             if (len(self.listIdentifiedHiders) != 0):
-                goal = self.listIdentifiedHiders[-1]
+                goal = self.listIdentifiedHiders[0]
                 hiderPosition = goal.state
                 
                 NextMove = self.getBestMoveWhenHiderMeetSeeker(self.seekerPosition, goal)
@@ -400,12 +424,12 @@ class Level3 (Level):
                                             listCorrespondingHiders.append(hider)
                                             break
                                 
-                        self.listIdentifiedHiders = list(set(self.listIdentifiedHiders).union(set(listCorrespondingHiders)))
-                        self.listIdentifiedHiders = list(set(self.listIdentifiedHiders) - set(self.ignoredHiders))
+                        self.listIdentifiedHiders = union(self.listIdentifiedHiders, listCorrespondingHiders)
+                        self.listIdentifiedHiders = diff(self.listIdentifiedHiders, self.ignoredHiders)
                     
                     #! Get the union of the old list of identified hiders and the new one
-                    self.listIdentifiedHiders = list(set(self.listIdentifiedHiders).union(set(tempListIdentifiedHiders)))
-                    self.listIdentifiedHiders = list(set(self.listIdentifiedHiders) - set(self.ignoredHiders))
+                    self.listIdentifiedHiders = union(self.listIdentifiedHiders, tempListIdentifiedHiders)
+                    self.listIdentifiedHiders = diff(self.listIdentifiedHiders, self.ignoredHiders)
                     
                     if (self.seekerPosition != self.seekerGoalPosition):
                         return
@@ -429,41 +453,66 @@ class Level3 (Level):
                         self.seekerPath = self.getShortestPath(self.seekerPosition, self.seekerGoalPosition)
                         self.seekerPathMove = 0
                     else:
-                        NextPosition: tuple[int, int] = None
-                        maxNumObservableCells = -1
-                        listValidNeighbors = getValidNeighbors(self.seekerPosition, self.map.matrix)
-                        for cell in listValidNeighbors:
-                            observable = self.getObservableCells(cell)
-                            if (len(observable) > maxNumObservableCells):
-                                maxNumObservableCells = len(observable)
-                                NextPosition = cell
+                        level = 1
+                        found = False
+                        maxLevel = max(self.seekerPosition[0], max(self.map.numRows - 1 - self.seekerPosition[0], max(self.seekerPosition[1], self.map.numCols - 1 - self.seekerPosition[1])))
+                        
+                        while (not found and level <= maxLevel):
+                            for row in range (self.seekerPosition[0] - level, self.seekerPosition[0] + level + 1):
+                                if (row >= 0 and row < self.map.numRows):
+                                    for col in range (self.seekerPosition[1] - level, self.seekerPosition[1] + level + 1):
+                                        if (col >= 0 and col < self.map.numCols):
+                                            if (not self.visitedMatrix[row][col]):
+                                                self.seekerGoalPosition = (row, col)
+                                                found = True
+                                                break
                                 
-                        self.seekerGoalPosition = NextPosition
-                        self.seekerPath: list[tuple[int, int]] = [self.seekerGoalPosition]
-                        self.seekerPathMove: int = 0
+                                if (found):
+                                    break
+                            
+                            if (found):
+                                break
+                    
+                            level = level + 1
+                            
+                        if (self.seekerGoalPosition is not None):
+                            self.seekerPath = self.getShortestPath(self.seekerPosition, self.seekerGoalPosition, self.visitedMatrix)
+                            self.seekerPathMove = 0
+                        else:
+                            raise Exception ("Your map is missing the hider")
                         
                     self.gotoIntersection = True
                     self.gotoHider = False
                     return
             
             else:
-                self.seekerGoalPosition = self.getNearestWallIntersection()
+                level = 1
+                found = False
+                maxLevel = max(self.seekerPosition[0], max(self.map.numRows - 1 - self.seekerPosition[0], max(self.seekerPosition[1], self.map.numCols - 1 - self.seekerPosition[1])))
+                
+                while (not found and level <= maxLevel):
+                    for row in range (self.seekerPosition[0] - level, self.seekerPosition[0] + level + 1):
+                        if (row >= 0 and row < self.map.numRows):
+                            for col in range (self.seekerPosition[1] - level, self.seekerPosition[1] + level + 1):
+                                if (col >= 0 and col < self.map.numCols):
+                                    if (not self.visitedMatrix[row][col]):
+                                        self.seekerGoalPosition = (row, col)
+                                        found = True
+                                        break
+                        
+                        if (found):
+                            break
+                    
+                    if (found):
+                        break
+            
+                    level = level + 1
+                    
                 if (self.seekerGoalPosition is not None):
-                    self.seekerPath = self.getShortestPath(self.seekerPosition, self.seekerGoalPosition)
+                    self.seekerPath = self.getShortestPath(self.seekerPosition, self.seekerGoalPosition, self.visitedMatrix)
                     self.seekerPathMove = 0
                 else:
-                    NextPosition: tuple[int, int] = None
-                    maxNumObservableCells = -1
-                    listValidNeighbors = getValidNeighbors(self.seekerPosition, self.map.matrix)
-                    for cell in listValidNeighbors:
-                        observable = self.getObservableCells(cell)
-                        if (len(observable) > maxNumObservableCells):
-                            maxNumObservableCells = len(observable)
-                            NextPosition = cell
-                            
-                    self.seekerGoalPosition = NextPosition
-                    self.seekerPath: list[tuple[int, int]] = [self.seekerGoalPosition]
-                    self.seekerPathMove: int = 0
+                    raise Exception ("Your map is missing the hider")
                     
                 self.gotoIntersection = True
                 self.gotoHider = False
@@ -512,18 +561,33 @@ class Level3 (Level):
                         self.seekerPath = self.getShortestPath(self.seekerPosition, self.seekerGoalPosition)
                         self.seekerPathMove = 0
                     else:
-                        NextPosition: tuple[int, int] = None
-                        maxNumObservableCells = -1
-                        listValidNeighbors = getValidNeighbors(self.seekerPosition, self.map.matrix)
-                        for cell in listValidNeighbors:
-                            observable = self.getObservableCells(cell)
-                            if (len(observable) > maxNumObservableCells):
-                                maxNumObservableCells = len(observable)
-                                NextPosition = cell
+                        level = 1
+                        found = False
+                        maxLevel = max(self.seekerPosition[0], max(self.map.numRows - 1 - self.seekerPosition[0], max(self.seekerPosition[1], self.map.numCols - 1 - self.seekerPosition[1])))
+                        
+                        while (not found and level <= maxLevel):
+                            for row in range (self.seekerPosition[0] - level, self.seekerPosition[0] + level + 1):
+                                if (row >= 0 and row < self.map.numRows):
+                                    for col in range (self.seekerPosition[1] - level, self.seekerPosition[1] + level + 1):
+                                        if (col >= 0 and col < self.map.numCols):
+                                            if (not self.visitedMatrix[row][col]):
+                                                self.seekerGoalPosition = (row, col)
+                                                found = True
+                                                break
                                 
-                        self.seekerGoalPosition = NextPosition
-                        self.seekerPath: list[tuple[int, int]] = [self.seekerGoalPosition]
-                        self.seekerPathMove: int = 0
+                                if (found):
+                                    break
+                            
+                            if (found):
+                                break
+                    
+                            level = level + 1
+                            
+                        if (self.seekerGoalPosition is not None):
+                            self.seekerPath = self.getShortestPath(self.seekerPosition, self.seekerGoalPosition, self.visitedMatrix)
+                            self.seekerPathMove = 0
+                        else:
+                            raise Exception ("Your map is missing the hider")
                     
                     self.gotoIntersection = True
                     self.gotoHider = False
@@ -535,18 +599,33 @@ class Level3 (Level):
                     self.seekerPath = self.getShortestPath(self.seekerPosition, self.seekerGoalPosition)
                     self.seekerPathMove = 0
                 else:
-                    NextPosition: tuple[int, int] = None
-                    maxNumObservableCells = -1
-                    listValidNeighbors = getValidNeighbors(self.seekerPosition, self.map.matrix)
-                    for cell in listValidNeighbors:
-                        observable = self.getObservableCells(cell)
-                        if (len(observable) > maxNumObservableCells):
-                            maxNumObservableCells = len(observable)
-                            NextPosition = cell
+                    level = 1
+                    found = False
+                    maxLevel = max(self.seekerPosition[0], max(self.map.numRows - 1 - self.seekerPosition[0], max(self.seekerPosition[1], self.map.numCols - 1 - self.seekerPosition[1])))
+                    
+                    while (not found and level <= maxLevel):
+                        for row in range (self.seekerPosition[0] - level, self.seekerPosition[0] + level + 1):
+                            if (row >= 0 and row < self.map.numRows):
+                                for col in range (self.seekerPosition[1] - level, self.seekerPosition[1] + level + 1):
+                                    if (col >= 0 and col < self.map.numCols):
+                                        if (not self.visitedMatrix[row][col]):
+                                            self.seekerGoalPosition = (row, col)
+                                            found = True
+                                            break
                             
-                    self.seekerGoalPosition = NextPosition
-                    self.seekerPath: list[tuple[int, int]] = [self.seekerGoalPosition]
-                    self.seekerPathMove: int = 0
+                            if (found):
+                                break
+                        
+                        if (found):
+                            break
+                
+                        level = level + 1
+                        
+                    if (self.seekerGoalPosition is not None):
+                        self.seekerPath = self.getShortestPath(self.seekerPosition, self.seekerGoalPosition, self.visitedMatrix)
+                        self.seekerPathMove = 0
+                    else:
+                        raise Exception ("Your map is missing the hider")
                 
                 self.gotoIntersection = True
                 self.gotoHider = False

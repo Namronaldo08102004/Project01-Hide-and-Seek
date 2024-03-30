@@ -133,7 +133,6 @@ class DisplayMap:
             # Move seeker and hiders
             self.cur_map = setSeeker(self.cur_map, cur[0])
             self.cur_map = setHiders(self.cur_map, [x.state for x in cur[1]])
-            print(cur[0])
             # new obser
             self.cur_map = assign_obser(mp=self.cur_map, loc=cur[3], person=SEEKER)
             self.cur_map = assign_obser(mp=self.cur_map, loc=hider_obv, person=HIDER)

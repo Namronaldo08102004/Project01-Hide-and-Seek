@@ -35,8 +35,6 @@ class Hider:
                 goal2 = goal2.parent
             
             return len(shortestPath1) < len(shortestPath2)
-        
-        return True
     
     def __eq__ (self, other):
         if (self.id is not None and other.id is not None):
