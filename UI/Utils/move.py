@@ -110,6 +110,8 @@ def setSeeker(mp: list, loc: tuple[int, int]):
         for y in range(len(mp[0])):
             if mp[x][y] == SEEKER:
                 mp[x][y] = 0
+            elif mp[x][y] == OBSERVABLE or mp[x][y] == OVERLAP:
+                mp[x][y] = 0
     x, y = loc
     mp[x][y] = SEEKER
     return mp
@@ -121,6 +123,8 @@ def setHiders(mp: list, loc: list[tuple[int, int]]):
     for x in range(len(mp)):
         for y in range(len(mp[0])):
             if mp[x][y] == HIDER:
+                mp[x][y] = 0
+            elif mp[x][y] == H_OBSERVABLE or mp[x][y] == OVERLAP:
                 mp[x][y] = 0
     for x, y in loc:
         mp[x][y] = HIDER

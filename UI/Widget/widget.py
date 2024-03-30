@@ -266,6 +266,9 @@ class MapWidget(Widget):
                     self.cell_size,
                 )
                 pygame.draw.rect(display, color, block)
+                if color == HIDERC or color == SEEKERC:
+                    pygame.draw.rect(display, BLACK, block, 1)
+                    
 
     def __update__(self, event):
         pass
@@ -281,6 +284,7 @@ class Legend(Widget):
         font=FONT,
         font_size: int = 20,
         background: bool = False,
+        offset_x: int = 0,
     ):
         super().__init__(position, size)
         if not key_words:
@@ -290,6 +294,7 @@ class Legend(Widget):
         self.font = pygame.font.Font(font, font_size)
         self.key_words = key_words
         self.bg = background
+        self.offx = offset_x
 
     def __render__(self, display):
         line_height = self.font.get_height() + 5
@@ -302,11 +307,11 @@ class Legend(Widget):
             (self.position.x + 90, self.position.y + 5),
         )
         for i, (key, color) in enumerate(self.key_words, 1):
-            text = self.font.render(key, True, color)
+            text = self.font.render(key, True, BLACK)
             display.blit(
                 text,
                 (
-                    self.position.x + 5 + 30,
+                    self.position.x + 5 + 35 + self.offx,
                     self.position.y + i * line_height + 5,
                 ),
             )
@@ -314,7 +319,7 @@ class Legend(Widget):
                 display,
                 color,
                 (
-                    self.position.x + 5,
+                    self.position.x + 5 + self.offx,
                     self.position.y + i * line_height + 5,
                     self.font.get_height(),
                     self.font.get_height(),

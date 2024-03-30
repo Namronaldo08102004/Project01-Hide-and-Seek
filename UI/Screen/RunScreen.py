@@ -61,7 +61,7 @@ class RunScreen(Screen):
         if self.ran and self.give_up and not self.drop_open:
             txt = Text(
                 text="Seeker gives up",
-                position=Vector2(WIDTH // 2 + 280, HEIGHT // 2 + 190),
+                position=Vector2(WIDTH // 2 + 283, HEIGHT // 2 + 190),
                 size=Vector2(180, 50),
                 color=RED,
                 font_size=30,
@@ -113,21 +113,22 @@ class RunScreen(Screen):
                 self.widgets.add(but)
         else:
             legend = Legend(
-                position=Vector2(WIDTH // 2 + 290, HEIGHT // 2 - 80),
-                size=Vector2(165, 245) if self.level <= 2 else Vector2(165, 270),
+                position=Vector2(WIDTH // 2 + 276, HEIGHT // 2 - 80),
+                size=Vector2(193, 245) if self.level <= 2 else Vector2(193, 270),
                 level=self.level,
                 font_size=20,
                 key_words=[
                     ("Wall", WALLC),
                     ("Obstacle", OBSTACLEC),
-                    ("Announce", ANNOUNCEC),
+                    ("Announcement", ANNOUNCEC),
                     ("Hider", HIDERC),
                     ("Seeker", SEEKERC),
-                    ("Seeker Vision", SEEKER_OBSERVABLEC),
-                    ("Hider Vision", HIDER_OBSERVABLEC),
+                    ("Seeker's Vision", SEEKER_OBSERVABLEC),
+                    ("Hiders' Vision", HIDER_OBSERVABLEC),
                 ],
                 font=FONT2,
                 background=True,
+                offset_x=3
             )
             self.widgets.add(legend)
 
@@ -153,9 +154,8 @@ class RunScreen(Screen):
 
     def begin_move(self):
         run = DisplayMap(self.cur_map, self.level, self.display, self.widgets)
-        self.old_score = run.getScore()
+        self.old_score, self.give_up = run.getResult()
         self.ran = True
-        self.give_up = run.give_up
         self.__update__(pygame.event.Event(pygame.NOEVENT))
 
     def restart(self):
