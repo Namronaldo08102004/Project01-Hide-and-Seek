@@ -51,15 +51,15 @@ def assign_obser(mp: list, loc: list[tuple], person: int = 3):
     Assign the observation to the map
     """
     for x, y in loc:
-        if (person == SEEKER and mp[x][y] == HIDER_OBSERVABLEC):
-            mp[x][y] = 8
-        elif (person == HIDER and mp[x][y] == SEEKER_OBSERVABLEC):
-                mp[x][y] = 8
+        if (person == SEEKER and mp[x][y] == H_OBSERVABLE):
+            mp[x][y] = OVERLAP
+        elif (person == HIDER and mp[x][y] == OBSERVABLE):
+                mp[x][y] = OVERLAP
         if mp[x][y] == 0:
-            if person == 2:
-                mp[x][y] = 7
-            elif person == 3:
-                mp[x][y] = 4
+            if person == HIDER:
+                mp[x][y] = H_OBSERVABLE
+            elif person == SEEKER:
+                mp[x][y] = OBSERVABLE
     return mp
 
 
