@@ -60,9 +60,9 @@ class App:
 
 app = App()
 app.__initiate__(HomeScreen())
-try:
-    app.run()
-except Exception as e:
-    print(e)
-    pygame.quit()
-    quit()
+# try:
+app.run()
+# except Exception as e:
+#     print(e)
+#     pygame.quit()
+#     quit()

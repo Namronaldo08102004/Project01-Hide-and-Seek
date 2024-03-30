@@ -151,6 +151,7 @@ class Text(Widget):
         font=FONT,
         font_size: int = 20,
         color: tuple = (255, 255, 255),
+        backgr: bool = True,
     ):
         if text == None:
             raise Exception("Text must have a text")
@@ -161,13 +162,15 @@ class Text(Widget):
         self.text = text
         self.font = pygame.font.Font(font, font_size)
         self.color = color
+        self.backgr = backgr
 
     def __render__(self, display):
         if not self.text:
             return
 
         text = self.font.render(self.text, True, self.color)
-        pygame.draw.rect(display, (255, 255, 255), self.rect)
+        if self.backgr:
+            pygame.draw.rect(display, (255, 255, 255), self.rect)
 
         display.blit(
             text,
@@ -219,6 +222,8 @@ class Image(Widget):
         )
 
 
+# 1wall, 2hider, 3seeker, 4seeker observable
+# 5obstacle, 6announce, 7hider observable
 class MapWidget(Widget):
     def __init__(
         self, mp: list[int], level=1, position=Vector2(0, 0), size=Vector2(0, 0)
@@ -236,20 +241,20 @@ class MapWidget(Widget):
             for j in range(len(self.map[0])):
                 color = BGC
                 match self.map[i][j]:
-                    case 1:
-                        color = WALLC
-                    case 2:
-                        color = HIDERC
-                    case 3:
-                        color = SEEKERC
-                    case 4:
-                        color = SEEKER_OBSERVABLEC
-                    case 5:
-                        color = OBSTACLEC
-                    case 6:
-                        color = ANNOUNCEC
                     case 7:
                         color = HIDER_OBSERVABLEC
+                    case 6:
+                        color = ANNOUNCEC
+                    case 5:
+                        color = OBSTACLEC
+                    case 4:
+                        color = SEEKER_OBSERVABLEC
+                    case 3:
+                        color = SEEKERC
+                    case 2:
+                        color = HIDERC
+                    case 1:
+                        color = WALLC
                     case _:
                         pass
                 block = pygame.Rect(
@@ -273,6 +278,7 @@ class Legend(Widget):
         key_words: list[tuple[str, tuple[int]]] = None,
         font=FONT,
         font_size: int = 20,
+        background: bool = False,
     ):
         super().__init__(position, size)
         if not key_words:
@@ -281,12 +287,19 @@ class Legend(Widget):
             key_words.pop(6)
         self.font = pygame.font.Font(font, font_size)
         self.key_words = key_words
+        self.bg = background
 
     def __render__(self, display):
         line_height = self.font.get_height() + 5
-        pygame.draw.rect(display, LEGEND_BGC, self.rect)
-        
-        for i, (key, color) in enumerate(self.key_words):
+        if self.bg:
+            pygame.draw.rect(display, LEGEND_BGC, self.rect)
+            pygame.draw.rect(display, BLACK, self.rect, 2)
+
+        display.blit(
+            self.font.render("Legend", True, BLACK),
+            (self.position.x + 90, self.position.y + 5),
+        )
+        for i, (key, color) in enumerate(self.key_words, 1):
             text = self.font.render(key, True, color)
             display.blit(
                 text,
@@ -304,4 +317,4 @@ class Legend(Widget):
                     self.font.get_height(),
                     self.font.get_height(),
                 ),
-            )   
+            )

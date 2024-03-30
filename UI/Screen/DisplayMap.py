@@ -1,10 +1,8 @@
-# import multiprocessing as mtpc
-import threading
-
 import pygame
 from Configs.config import *
 from Source.Level1 import *
 from Source.Level2 import *
+from Source.Level3 import *
 from Utils.move import *
 from Widget.widget import *
 
@@ -17,16 +15,7 @@ class DisplayMap:
         self.widgets = widgets
 
         self.score = 0
-
-        self.stop_event = threading.Event()
-        self.thread1 = threading.Thread(target=self.redirect)
-        self.thread2 = threading.Thread(target=self.checkQuit)
-
-        # self.thread1.start()
-        # self.thread2.start()
-        # self.thread1.join()
-        # self.thread2.join()
-        # self.event.wait()
+        self.give_up = False
         self.redirect()
 
     def redirect(self):
@@ -34,15 +23,16 @@ class DisplayMap:
             self.runLevel1()
         elif self.level == 2:
             self.runLevel2()
-        # elif self.level == 3:
-        #     self.runLevel3()
+        elif self.level == 3:
+            self.runLevel3()
         # elif self.level == 4:
         #     self.runLevel4()
-        self.stop_event.set()
 
     def runLevel1(self):
         map = Map(self.cur_map)
-        if len(map.listHiderPositions) != 1:
+        if len(map.listHiderPositions) == 0:
+            raise Exception("This map has no hider")
+        elif len(map.listHiderPositions) > 1:
             raise Exception("This is not a map for Level 1")
 
         game = Level1(map)
@@ -77,8 +67,8 @@ class DisplayMap:
 
     def runLevel2(self):
         map = Map(self.cur_map)
-        # if (len(map.listHiderPositions) < 2):
-        #         raise Exception("This is not a map for Level 2")
+        if len(map.listHiderPositions) == 0:
+            raise Exception("The map has no hider")
 
         game = Level2(map)
 
@@ -115,6 +105,64 @@ class DisplayMap:
             prev = thing
         self.score = score
 
+    def runLevel3(self):
+        map = Map(self.cur_map)
+        if len(map.listHiderPositions) == 0:
+            raise Exception("The map has no hider")
+
+        game = Level3(map)
+
+        listThings = game.level3()
+        prev = next(listThings)
+        print([x.state for x in prev[1]])
+
+        for cur in listThings:
+            print([x.state for x in cur[1]], [x.state for x in prev[1]])
+            self.give_up = cur[-1]
+            score = cur[2]
+            seekerPos = cur[0]
+            directionSeeker = getDirection(prev[0], seekerPos)
+            directionHider = []
+            hider_obv = []
+            for i in range(len(cur[1])):
+                directionHider.append(getDirection(prev[1][i].state, cur[1][i].state))
+                hider_obv += cur[1][i].hiderObservableCells
+
+            # Move seeker
+            self.cur_map = moveTiles(mp=self.cur_map, mv=directionSeeker, loc=prev[0])
+            # move hiders
+            for i in range(len(cur[1])):
+                # print(prev[1][i].state, directionHider[i])
+                self.cur_map = moveTiles(
+                    mp=self.cur_map,
+                    mv=directionHider[i],
+                    loc=prev[1][i].state,
+                    person=2,
+                )
+            # new obser
+            self.cur_map = assign_obser(mp=self.cur_map, loc=cur[3])
+            self.cur_map = assign_obser(mp=self.cur_map, loc=hider_obv, person=HIDER)
+
+            # Announcement
+            tmp = []
+            if cur[4]:
+                for x, y in cur[4]:
+                    tmp.append(self.cur_map[x][y])
+                    self.cur_map[x][y] = 6
+            self.printMap(score)
+
+            self.cur_map = recov_obser(mp=self.cur_map, loc=cur[3])
+            self.cur_map = recov_obser(mp=self.cur_map, loc=hider_obv)
+
+            if self.give_up:
+                break
+            # Recover announcement
+            if cur[4]:
+                for i, (x, y) in enumerate(cur[4]):
+                    self.cur_map[x][y] = tmp[i]
+            prev = cur
+        self.score = score
+
     def printMap(self, score):
         for ev in pygame.event.get():
             if ev.type == pygame.QUIT:
@@ -123,7 +171,7 @@ class DisplayMap:
         mp = MapWidget(self.cur_map, self.level)
         txt = Text(
             text=f"Score: {score}",
-            position=Vector2(WIDTH // 2 + 290, HEIGHT // 2 + 200),
+            position=Vector2(WIDTH // 2 + 280, HEIGHT // 2 + 200),
             size=Vector2(180, 50),
             color=BLACK,
             font_size=26,

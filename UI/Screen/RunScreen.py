@@ -17,6 +17,7 @@ class RunScreen(Screen):
         self.old_score = 0
         self.back2HC = False
         self.ran = False
+        self.give_up = False
 
     def __initiate__(self):
         super().__initiate__()
@@ -33,7 +34,7 @@ class RunScreen(Screen):
         self.widgets = WidgetGroup()
 
         if not self.drop_open:
-            self.back = Button(
+            back = Button(
                 text="Back",
                 position=Vector2(WIDTH - 280, HEIGHT - 100),
                 size=Vector2(100, 40),
@@ -42,7 +43,7 @@ class RunScreen(Screen):
                 hover_color=HOVER,
                 font_size=30,
             )
-            self.widgets.add(self.back)
+            self.widgets.add(back)
         if self.select != -1 and self.cur_map:
             mp = MapWidget(self.cur_map, self.level)
             self.widgets.add(mp)
@@ -57,11 +58,20 @@ class RunScreen(Screen):
                     font_size=30,
                 )
                 self.widgets.add(start)
-
-        if self.old_score != 0:
+        if self.ran and self.give_up and not self.drop_open:
+            txt = Text(
+                text="Seeker gives up",
+                position=Vector2(WIDTH // 2 + 280, HEIGHT // 2 + 190),
+                size=Vector2(180, 50),
+                color=RED,
+                font_size=30,
+                backgr=False
+            )
+            self.widgets.add(txt)
+        if self.old_score != 0 and not self.drop_open:
             txt = Text(
                 text=f"Score: {self.old_score}",
-                position=Vector2(WIDTH // 2 + 290, HEIGHT // 2 + 200),
+                position=Vector2(WIDTH // 2 + 280, HEIGHT // 2 - 150),
                 size=Vector2(180, 50),
                 color=BLACK,
                 font_size=26,
@@ -103,8 +113,8 @@ class RunScreen(Screen):
                 self.widgets.add(but)
         else:
             legend = Legend(
-                position=Vector2(WIDTH // 2 + 290, HEIGHT // 2 - 120),
-                size=Vector2(160, 200),
+                position=Vector2(WIDTH // 2 + 290, HEIGHT // 2 - 80),
+                size=Vector2(165, 245) if self.level <= 2 else Vector2(165, 270),
                 level=self.level,
                 font_size=20,
                 key_words=[
@@ -117,6 +127,7 @@ class RunScreen(Screen):
                     ("Hider Vision", HIDER_OBSERVABLEC),
                 ],
                 font=FONT2,
+                background=True,
             )
             self.widgets.add(legend)
 
@@ -144,6 +155,7 @@ class RunScreen(Screen):
         run = DisplayMap(self.cur_map, self.level, self.display, self.widgets)
         self.old_score = run.getScore()
         self.ran = True
+        self.give_up = run.give_up
         self.__update__(pygame.event.Event(pygame.NOEVENT))
 
     def restart(self):
