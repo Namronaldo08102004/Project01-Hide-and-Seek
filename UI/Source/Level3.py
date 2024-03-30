@@ -335,9 +335,6 @@ class Level3 (Level):
             
             return False
         
-        for hider in self.listIdentifiedHiders:
-            print(hider.state)
-        
         if (len(self.ignoredHiders) == len(self.listHiders)):
             self.giveUp = True
             return
@@ -373,77 +370,83 @@ class Level3 (Level):
                 return
             
         elif (self.gotoHider):
-            goal = self.listIdentifiedHiders[-1]
-            hiderPosition = goal.state
-            
-            NextMove = self.getBestMoveWhenHiderMeetSeeker(self.seekerPosition, goal)
-            if ((self.seekerPosition, NextMove) not in self.roadOfSeekerWhenCatchHider):
-                self.roadOfSeekerWhenCatchHider.append((self.seekerPosition, NextMove))
+            if (len(self.listIdentifiedHiders) != 0):
+                goal = self.listIdentifiedHiders[-1]
+                hiderPosition = goal.state
                 
-                self.seekerPosition = NextMove
-                self.seekerGoalPosition = hiderPosition
-                self.listSeekerObservableCells = self.getObservableCells(self.seekerPosition)
-                
-                tempListIdentifiedHiders = self.identifyObservableHiders()
-                listIdentifiedAnnouncements = self.identifyObservableAnnouncements()
-                
-                if (listIdentifiedAnnouncements):
-                    listCorrespondingHiders: list[Hider] = []
-                    for announcement in listIdentifiedAnnouncements:
-                        correspondingHiders = self.announcementDict[announcement]
-                        
-                        for correspondingHider in correspondingHiders:
-                            if (correspondingHider != self.seekerGoalPosition): 
-                            #! At this time, self.seekerGoalPosition is a position where a certain hider is standing
-                                for hider in self.listHiders:
-                                    if (correspondingHider == hider.state and hider not in self.ignoredHiders):
-                                        listCorrespondingHiders.append(hider)
-                                        break
+                NextMove = self.getBestMoveWhenHiderMeetSeeker(self.seekerPosition, goal)
+                if ((self.seekerPosition, NextMove) not in self.roadOfSeekerWhenCatchHider):
+                    self.roadOfSeekerWhenCatchHider.append((self.seekerPosition, NextMove))
+                    
+                    self.seekerPosition = NextMove
+                    self.seekerGoalPosition = hiderPosition
+                    self.listSeekerObservableCells = self.getObservableCells(self.seekerPosition)
+                    
+                    tempListIdentifiedHiders = self.identifyObservableHiders()
+                    listIdentifiedAnnouncements = self.identifyObservableAnnouncements()
+                    
+                    if (listIdentifiedAnnouncements):
+                        listCorrespondingHiders: list[Hider] = []
+                        for announcement in listIdentifiedAnnouncements:
+                            correspondingHiders = self.announcementDict[announcement]
                             
-                    self.listIdentifiedHiders = list(set(self.listIdentifiedHiders).union(set(listCorrespondingHiders)))
+                            for correspondingHider in correspondingHiders:
+                                if (correspondingHider != self.seekerGoalPosition): 
+                                #! At this time, self.seekerGoalPosition is a position where a certain hider is standing
+                                    for hider in self.listHiders:
+                                        if (correspondingHider == hider.state and hider not in self.ignoredHiders):
+                                            listCorrespondingHiders.append(hider)
+                                            break
+                                
+                        self.listIdentifiedHiders = list(set(self.listIdentifiedHiders).union(set(listCorrespondingHiders)))
+                        self.listIdentifiedHiders = list(set(self.listIdentifiedHiders) - set(self.ignoredHiders))
+                    
+                    #! Get the union of the old list of identified hiders and the new one
+                    self.listIdentifiedHiders = list(set(self.listIdentifiedHiders).union(set(tempListIdentifiedHiders)))
                     self.listIdentifiedHiders = list(set(self.listIdentifiedHiders) - set(self.ignoredHiders))
+                    
+                    if (self.seekerPosition != self.seekerGoalPosition):
+                        return
                 
-                #! Get the union of the old list of identified hiders and the new one
-                self.listIdentifiedHiders = list(set(self.listIdentifiedHiders).union(set(tempListIdentifiedHiders)))
-                self.listIdentifiedHiders = list(set(self.listIdentifiedHiders) - set(self.ignoredHiders))
-                
-                if (self.seekerPosition != self.seekerGoalPosition):
+                #! The seeker realized that it cannot catch this hider
+                else:
+                    self.roadOfSeekerWhenCatchHider = []
+                    
+                    #! Remove the hider from the list of identified hiders
+                    removeHider = None
+                    for hider in self.listIdentifiedHiders:
+                        if (hiderPosition == hider.state):
+                            removeHider = hider
+                            break
+                    
+                    self.listIdentifiedHiders.remove(removeHider)
+                    self.ignoredHiders.append(removeHider)
+                    
+                    self.seekerGoalPosition = self.getNearestWallIntersection()
+                    if (self.seekerGoalPosition is not None):
+                        self.seekerPath = self.getShortestPath(self.seekerPosition, self.seekerGoalPosition)
+                        self.seekerPathMove = 0
+                    else:
+                        NextPosition: tuple[int, int] = None
+                        maxNumObservableCells = -1
+                        listValidNeighbors = getValidNeighbors(self.seekerPosition, self.map.matrix)
+                        for cell in listValidNeighbors:
+                            observable = self.getObservableCells(cell)
+                            if (len(observable) > maxNumObservableCells):
+                                maxNumObservableCells = len(observable)
+                                NextPosition = cell
+                                
+                        self.seekerGoalPosition = NextPosition
+                        self.seekerPath: list[tuple[int, int]] = [self.seekerGoalPosition]
+                        self.seekerPathMove: int = 0
+                        
+                    self.gotoIntersection = True
+                    self.gotoHider = False
                     return
             
-            #! The seeker realized that it cannot catch this hider
             else:
-                self.roadOfSeekerWhenCatchHider = []
-                
-                #! Remove the hider from the list of identified hiders
-                removeHider = None
-                for hider in self.listIdentifiedHiders:
-                    if (hiderPosition == hider.state):
-                        removeHider = hider
-                        break
-                
-                self.listIdentifiedHiders.remove(removeHider)
-                self.ignoredHiders.append(removeHider)
-                
-                self.seekerGoalPosition = self.getNearestWallIntersection()
-                if (self.seekerGoalPosition is not None):
-                    self.seekerPath = self.getShortestPath(self.seekerPosition, self.seekerGoalPosition)
-                    self.seekerPathMove = 0
-                else:
-                    NextPosition: tuple[int, int] = None
-                    maxNumObservableCells = -1
-                    listValidNeighbors = getValidNeighbors(self.seekerPosition, self.map.matrix)
-                    for cell in listValidNeighbors:
-                        observable = self.getObservableCells(cell)
-                        if (len(observable) > maxNumObservableCells):
-                            maxNumObservableCells = len(observable)
-                            NextPosition = cell
-                            
-                    self.seekerGoalPosition = NextPosition
-                    self.seekerPath: list[tuple[int, int]] = [self.seekerGoalPosition]
-                    self.seekerPathMove: int = 0
-                    
-                self.gotoIntersection = True
                 self.gotoHider = False
+                self.gotoIntersection = True
                 return
 
         checkNoHider: bool = True
@@ -599,15 +602,13 @@ class Level3 (Level):
         yield listThingsInLevel3[-1]
                 
         while (not self.giveUp):
-            tempListHiderPositions = []
-            for hider in self.listHiders:
-                tempListHiderPositions.append(hider.state)
+            prevNumHiders = len(self.listHiders)
                 
             if (self.takeTurn == SEEKER):
                 self.seekerTakeTurn()
                 
                 self.takeTurn = HIDER
-                if (len(self.listHiders) != 0 and self.seekerPosition not in tempListHiderPositions):
+                if (len(self.listHiders) != 0 and len(self.listHiders) == prevNumHiders):
                     self.numSeekerSteps = self.numSeekerSteps + 1
                     self.score = self.score - 1
                     listThingsInLevel3.append((self.seekerPosition, self.listHiders, self.score, self.listSeekerObservableCells, self.announcementDict, self.giveUp))
@@ -632,7 +633,7 @@ class Level3 (Level):
                     if (len(self.announcementDict) != 0):
                         self.announcementDict = dict()
                         
-                if (len(self.listHiders) == 0 or self.seekerPosition in tempListHiderPositions):
+                if (len(self.listHiders) == 0 or len(self.listHiders) != prevNumHiders):
                     self.score = self.score + 20
                     listThingsInLevel3.append((self.seekerPosition, self.listHiders, self.score, self.listSeekerObservableCells, self.announcementDict, self.giveUp))
                     yield listThingsInLevel3[-1]
