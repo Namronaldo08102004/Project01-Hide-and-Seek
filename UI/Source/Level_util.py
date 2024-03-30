@@ -40,6 +40,9 @@ class Hider:
     def __eq__ (self, other):
         return self.state == other.state
     
+    def __ne__ (self, other):
+        return self.state != other.state
+    
     def __hash__ (self):
         return hash(self.state)
     
