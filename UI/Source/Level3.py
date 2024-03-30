@@ -67,8 +67,8 @@ class Level3 (Level):
         self.seekerPosition: tuple[int, int] = map.seekerPosition
         listHiderPositions: list[tuple[int, int]] = map.listHiderPositions.copy()
         self.listHiders: list[Hider] = []
-        for position in listHiderPositions:
-            self.listHiders.append(Hider(position, map = self.map.matrix))
+        for i in range (0, len(listHiderPositions)):
+            self.listHiders.append(Hider(listHiderPositions[i], map = self.map.matrix, id = i))
             self.listHiders[-1].identifiedSeeker = self.listHiders[-1].identifyObservableSeeker(self.seekerPosition)
         
         self.listSeekerObservableCells: list[tuple[int, int]] = self.getObservableCells(self.seekerPosition)

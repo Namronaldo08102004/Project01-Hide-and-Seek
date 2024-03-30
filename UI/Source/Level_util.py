@@ -3,7 +3,8 @@ from random import choice
 from Source.A_Star import *
     
 class Hider:
-    def __init__ (self, state: tuple[int, int], startPosition: tuple[int, int] = None, map = None, visitedMatrix = None):
+    def __init__ (self, state: tuple[int, int], startPosition: tuple[int, int] = None, map = None, visitedMatrix = None, id: int = None):
+        self.id = id
         self.state = state
         self.startPosition = startPosition
         self.map = map
@@ -38,9 +39,13 @@ class Hider:
         return True
     
     def __eq__ (self, other):
+        if (self.id is not None and other.id is not None):
+            return self.id == other.id
         return self.state == other.state
     
     def __ne__ (self, other):
+        if (self.id is not None and other.id is not None):
+            return self.id != other.id
         return self.state != other.state
     
     def __hash__ (self):
