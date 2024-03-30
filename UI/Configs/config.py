@@ -22,7 +22,7 @@ OVERLAPC = (114, 190, 143)
 
 PATH = (223, 117, 69)
 
-DELAY_TIME = 100  # ms
+DELAY_TIME = 300  # ms
 
 FONT = "Assets/MadimiOne-Regular.ttf"
 FONT2 = "Assets/OpenSans-Regular.ttf"

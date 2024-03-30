@@ -1,5 +1,6 @@
-import pygame
 from copy import deepcopy
+
+import pygame
 from Configs.config import *
 from Source.Level1 import *
 from Source.Level2 import *
@@ -119,44 +120,20 @@ class DisplayMap:
         for cur in listThings:
             self.give_up = cur[-1]
             score = cur[2]
-            directionSeeker = getDirection(prev[0], cur[0])
-            directionHider = []
+
             hider_obv = []
-            
             pt1, pt2 = 0, 0
             while pt1 < len(prev[1]) and pt2 < len(cur[1]):
                 if prev[1][pt1] == cur[1][pt2]:
-                    directionHider.append(getDirection(prev[1][pt1].state, cur[1][pt2].state))
                     hider_obv += cur[1][pt2].hiderObservableCells
                     pt1 += 1
                     pt2 += 1
                 else:
                     pt1 += 1
-            
-            
-            # for i in range(len(cur[1])):
-            #     directionHider.append(getDirection(prev[1][i].state, cur[1][i].state))
-            #     hider_obv += cur[1][i].hiderObservableCells
-
-            # Move seeker
-            self.cur_map = moveTiles(mp=self.cur_map, mv=directionSeeker, loc=prev[0])
-            # Move hiders
-            # for i in range(len(cur[1])):
-            #     # print(prev[1][i].state, directionHider[i])
-            #     self.cur_map = moveTiles(
-            #         mp=self.cur_map,
-            #         mv=directionHider[i],
-            #         loc=prev[1][i].state,
-            #         person=2,
-            #     )
-            pt1, pt2 = 0, 0
-            while pt1 < len(prev[1]) and pt2 < len(cur[1]):
-                if prev[1][pt1] == cur[1][pt2]:
-                    self.cur_map = moveTiles(mp=self.cur_map, mv=directionHider[pt2], loc=prev[1][pt1].state, person=2)
-                    pt1 += 1
-                    pt2 += 1
-                else:
-                    pt1 += 1
+            # Move seeker and hiders
+            self.cur_map = setSeeker(self.cur_map, cur[0])
+            self.cur_map = setHiders(self.cur_map, [x.state for x in cur[1]])
+            print(cur[0])
             # new obser
             self.cur_map = assign_obser(mp=self.cur_map, loc=cur[3], person=SEEKER)
             self.cur_map = assign_obser(mp=self.cur_map, loc=hider_obv, person=HIDER)
@@ -172,12 +149,12 @@ class DisplayMap:
             self.cur_map = recov_obser(mp=self.cur_map, loc=cur[3])
             self.cur_map = recov_obser(mp=self.cur_map, loc=hider_obv)
 
-            if self.give_up:
-                break
             # Recover announcement
             if cur[4]:
                 for i, (x, y) in enumerate(cur[4]):
                     self.cur_map[x][y] = tmp[i]
+            if self.give_up:
+                break
             prev = deepcopy(cur)
         self.score = score
 
