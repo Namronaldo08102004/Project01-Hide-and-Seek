@@ -18,9 +18,11 @@ ANNOUNCEC = (0, 0, 0)
 HIDER_OBSERVABLEC = (233, 231, 174)
 SEEKER_OBSERVABLEC = (109, 221, 212)
 
+OVERLAP = (114, 190, 143)
+
 PATH = (223, 117, 69)
 
-DELAY_TIME = 100  # ms
+DELAY_TIME = 200  # ms
 
 FONT = "Assets/MadimiOne-Regular.ttf"
 FONT2 = "Assets/OpenSans-Regular.ttf"

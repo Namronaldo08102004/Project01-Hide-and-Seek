@@ -241,6 +241,8 @@ class MapWidget(Widget):
             for j in range(len(self.map[0])):
                 color = BGC
                 match self.map[i][j]:
+                    case 8:
+                        color = OVERLAP
                     case 7:
                         color = HIDER_OBSERVABLEC
                     case 6:

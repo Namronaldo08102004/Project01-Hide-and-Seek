@@ -1,4 +1,5 @@
 import pygame
+from copy import deepcopy
 from Configs.config import *
 from Source.Level1 import *
 from Source.Level2 import *
@@ -113,33 +114,51 @@ class DisplayMap:
         game = Level3(map)
 
         listThings = game.level3()
-        prev = next(listThings)
+        prev = deepcopy(next(listThings))
 
         for cur in listThings:
-            
             self.give_up = cur[-1]
             score = cur[2]
-            seekerPos = cur[0]
-            directionSeeker = getDirection(prev[0], seekerPos)
+            directionSeeker = getDirection(prev[0], cur[0])
             directionHider = []
             hider_obv = []
-            for i in range(len(cur[1])):
-                directionHider.append(getDirection(prev[1][i].state, cur[1][i].state))
-                hider_obv += cur[1][i].hiderObservableCells
+            
+            pt1, pt2 = 0, 0
+            while pt1 < len(prev[1]) and pt2 < len(cur[1]):
+                if prev[1][pt1] == cur[1][pt2]:
+                    directionHider.append(getDirection(prev[1][pt1].state, cur[1][pt2].state))
+                    hider_obv += cur[1][pt2].hiderObservableCells
+                    pt1 += 1
+                    pt2 += 1
+                else:
+                    pt1 += 1
+            
+            
+            # for i in range(len(cur[1])):
+            #     directionHider.append(getDirection(prev[1][i].state, cur[1][i].state))
+            #     hider_obv += cur[1][i].hiderObservableCells
 
             # Move seeker
             self.cur_map = moveTiles(mp=self.cur_map, mv=directionSeeker, loc=prev[0])
-            # move hiders
-            for i in range(len(cur[1])):
-                # print(prev[1][i].state, directionHider[i])
-                self.cur_map = moveTiles(
-                    mp=self.cur_map,
-                    mv=directionHider[i],
-                    loc=prev[1][i].state,
-                    person=2,
-                )
+            # Move hiders
+            # for i in range(len(cur[1])):
+            #     # print(prev[1][i].state, directionHider[i])
+            #     self.cur_map = moveTiles(
+            #         mp=self.cur_map,
+            #         mv=directionHider[i],
+            #         loc=prev[1][i].state,
+            #         person=2,
+            #     )
+            pt1, pt2 = 0, 0
+            while pt1 < len(prev[1]) and pt2 < len(cur[1]):
+                if prev[1][pt1] == cur[1][pt2]:
+                    self.cur_map = moveTiles(mp=self.cur_map, mv=directionHider[pt2], loc=prev[1][pt1].state, person=2)
+                    pt1 += 1
+                    pt2 += 1
+                else:
+                    pt1 += 1
             # new obser
-            self.cur_map = assign_obser(mp=self.cur_map, loc=cur[3])
+            self.cur_map = assign_obser(mp=self.cur_map, loc=cur[3], person=SEEKER)
             self.cur_map = assign_obser(mp=self.cur_map, loc=hider_obv, person=HIDER)
 
             # Announcement
@@ -159,7 +178,7 @@ class DisplayMap:
             if cur[4]:
                 for i, (x, y) in enumerate(cur[4]):
                     self.cur_map[x][y] = tmp[i]
-            prev = cur
+            prev = deepcopy(cur)
         self.score = score
 
     def printMap(self, score):

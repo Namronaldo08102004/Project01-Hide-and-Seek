@@ -1,3 +1,5 @@
+from Configs.config import *
+
 def find_entity(mp: list, person: int = 3):
     """
     Find the entity in the map
@@ -33,13 +35,13 @@ def getDirection(start: tuple[int, int], goal: tuple[int, int]):
         return "tl"
 
 
-# 4: seeker observation, 7: hider observation
+# 4: seeker observation, 7: hider observation, 8: overlap observation
 def recov_obser(mp: list, loc: list[tuple]):
     """
     Recover the map from the observation
     """
     for x, y in loc:
-        if mp[x][y] == 4 or mp[x][y] == 7:
+        if mp[x][y] == 4 or mp[x][y] == 7 or mp[x][y] == 8:
             mp[x][y] = 0
     return mp
 
@@ -49,6 +51,10 @@ def assign_obser(mp: list, loc: list[tuple], person: int = 3):
     Assign the observation to the map
     """
     for x, y in loc:
+        if (person == SEEKER and mp[x][y] == HIDER_OBSERVABLEC):
+            mp[x][y] = 8
+        elif (person == HIDER and mp[x][y] == SEEKER_OBSERVABLEC):
+                mp[x][y] = 8
         if mp[x][y] == 0:
             if person == 2:
                 mp[x][y] = 7
