@@ -587,6 +587,12 @@ while True:
                 pygame.draw.rect(screen, LIGHTPINK, Start)
                 screen.blit(startLevel, startLevelRect)
                 
+                #! Draw observable cells
+                for cell in game.listSeekerObservableCells:
+                    rect = blocks[cell[0]][cell[1]][0]
+                    pygame.draw.rect(screen, RED, rect)
+                    pygame.draw.rect(screen, BLACK, rect, 2)
+                
                 pygame.display.flip()
                         
                 while (not game.giveUp):
@@ -606,7 +612,11 @@ while True:
                         
                     sleep(0.075)
                     if (game.takeTurn == SEEKER):
-                            
+                        for cell in game.listSeekerObservableCells:
+                            rect = blocks[cell[0]][cell[1]][0]
+                            pygame.draw.rect(screen, WHITE, rect)
+                            pygame.draw.rect(screen, BLACK, rect, 2)
+                        
                         for row in range (0, game.map.numRows):
                             for col in range (0, game.map.numCols):
                                 if (game.visitedMatrix[row][col] == True and game.map.matrix[row][col] != WALL):
@@ -638,6 +648,12 @@ while True:
                         pygame.draw.rect(screen, BLACK, rect, 2)
                         scaled_seeker_image = pygame.transform.scale(seeker_image, (cellSize[1], cellSize[0]))
                         screen.blit(scaled_seeker_image, (col * cellSize[1], row * cellSize[0]))
+                        
+                        #! Draw observable cells
+                        for cell in game.listSeekerObservableCells:
+                            rect = blocks[cell[0]][cell[1]][0]
+                            pygame.draw.rect(screen, RED, rect)
+                            pygame.draw.rect(screen, BLACK, rect, 2)
                             
                         pygame.display.flip()
                         

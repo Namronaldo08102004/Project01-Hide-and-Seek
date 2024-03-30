@@ -335,6 +335,9 @@ class Level3 (Level):
             
             return False
         
+        for hider in self.listIdentifiedHiders:
+            print(hider.state)
+        
         if (len(self.ignoredHiders) == len(self.listHiders)):
             self.giveUp = True
             return
@@ -379,6 +382,7 @@ class Level3 (Level):
                 
                 self.seekerPosition = NextMove
                 self.seekerGoalPosition = hiderPosition
+                self.listSeekerObservableCells = self.getObservableCells(self.seekerPosition)
                 
                 tempListIdentifiedHiders = self.identifyObservableHiders()
                 listIdentifiedAnnouncements = self.identifyObservableAnnouncements()
@@ -622,12 +626,8 @@ class Level3 (Level):
                 self.takeTurn = SEEKER
                 self.numHiderSteps = self.numHiderSteps + 1
                 
-                if (self.numHiderSteps != 0 and self.numHiderSteps != 1 and 
-                    (self.numHiderSteps % 8 == 0 or self.numHiderSteps % 8 == 1)):
-                    listThingsInLevel3.append((self.seekerPosition, self.listHiders, self.score, self.listSeekerObservableCells, self.announcementDict, self.giveUp))
-                    yield listThingsInLevel3[-1]
-                    continue
-                else:
+                if (not (self.numHiderSteps != 0 and self.numHiderSteps != 1 and 
+                    (self.numHiderSteps % 8 == 0 or self.numHiderSteps % 8 == 1))):
                     #! After 2 steps, the announcement disappears
                     if (len(self.announcementDict) != 0):
                         self.announcementDict = dict()

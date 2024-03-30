@@ -335,16 +335,6 @@ class Level3 (Level):
             
             return False
         
-        # print("Road:")
-        # print(self.roadOfSeekerWhenCatchHider)
-        # print("List Identified Hiders:")
-        # for hider in self.listIdentifiedHiders:
-        #     print(hider.state, end = " ")
-        # print()
-        # for hider in self.ignoredHiders:
-        #     print(hider.state, end = " ")
-        # print()
-        
         if (len(self.ignoredHiders) == len(self.listHiders)):
             self.giveUp = True
             return
@@ -389,6 +379,7 @@ class Level3 (Level):
                 
                 self.seekerPosition = NextMove
                 self.seekerGoalPosition = hiderPosition
+                self.listSeekerObservableCells = self.getObservableCells(self.seekerPosition)
                 
                 tempListIdentifiedHiders = self.identifyObservableHiders()
                 listIdentifiedAnnouncements = self.identifyObservableAnnouncements()
