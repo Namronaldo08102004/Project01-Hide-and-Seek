@@ -1,17 +1,28 @@
-from Configs.config import *
-from Screen.Screen import Screen
-from Widget.widget import *
+from UI.Configs.config import *
+from UI.Screen.Screen import Screen
+from UI.Widget.widget import *
 
 
 class HomeScreen(Screen):
+    """
+    HomeScreen class is used to display the home screen of the game.
+    Allow user to select the desired level to play.
+    """
+
     def __init__(self):
         super().__init__()
 
     def __initiate__(self):
+        """
+        Initiate the home screen.
+        Create buttons for the user to select the level or quit.
+        """
         super().__initiate__()
         pygame.display.set_caption("Hide and Seek")
 
-        self.image = Image("Assets/HideNSeek.png", Vector2(WIDTH // 2 - 150, 30), 1 / 2)
+        self.image = Image(
+            "UI/Assets/HideNSeek.png", Vector2(WIDTH // 2 - 150, 30), 1 / 2
+        )
         self.level = -1
 
         w = WIDTH // 2 - 50
@@ -73,17 +84,24 @@ class HomeScreen(Screen):
         self.widgets.add(self.quit)
 
     def __render__(self, display):
+        """
+        Render the home screen on the display.
+        """
         super().__render__(display)
         self.widgets.__render__(display)
 
     def callback(self, txt: str = None):
+        """
+        If the button is clicked, update the level.
+        Args:
+            txt (str, optional): The chosen level. Defaults to None.
+        """
         if txt == "Quit":
             self.level = 5
         else:
             self.level = int(txt.split(" ")[-1])
 
-        #! temp return
-        if self.level not in {1, 2, 3}:
+        if self.level not in {1, 2, 3, 4}:
             print("Level not available")
             self.level = 5
         return

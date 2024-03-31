@@ -1,7 +1,7 @@
-from Configs.config import *
+from UI.Configs.config import *
 
 
-def find_entity(mp: list, person: int = 3):
+def find_entity(mp: list[list[int]], person: int = 3) -> list[tuple[int, int]]:
     """
     Find the entity in the map
     """
@@ -13,7 +13,16 @@ def find_entity(mp: list, person: int = 3):
     return ls
 
 
-def getDirection(start: tuple[int, int], goal: tuple[int, int]):
+def getDirection(start: tuple[int, int], goal: tuple[int, int]) -> str:
+    """
+    Get the direction from the start to the goal
+    Args:
+        start (tuple[int, int]): starting position
+        goal (tuple[int, int]): destination
+
+    Returns:
+        str: The moved direction
+    """
     diff = (goal[0] - start[0], goal[1] - start[1])
 
     if diff == (0, 0):  # ? If the start and the goal are the same
@@ -37,7 +46,7 @@ def getDirection(start: tuple[int, int], goal: tuple[int, int]):
 
 
 # 4: seeker observation, 7: hider observation, 8: overlap observation
-def recov_obser(mp: list, loc: list[tuple]):
+def recov_obser(mp: list[list[int]], loc: list[tuple]) -> list[list[int]]:
     """
     Recover the map from the observation
     """
@@ -47,7 +56,9 @@ def recov_obser(mp: list, loc: list[tuple]):
     return mp
 
 
-def assign_obser(mp: list, loc: list[tuple], person: int = 3):
+def assign_obser(
+    mp: list[list[int]], loc: list[tuple], person: int = 3
+) -> list[list[int]]:
     """
     Assign the observation to the map
     """
@@ -65,9 +76,19 @@ def assign_obser(mp: list, loc: list[tuple], person: int = 3):
 
 
 def moveTiles(
-    mp: list, mv: str = None, loc: tuple = (0, 0), person: int = 3
+    mp: list[list[int]], mv: str = None, loc: tuple[int, int] = (0, 0), person: int = 3
 ) -> list[list[int]]:
-    # u, d, l, r, tl, tr, bl, br
+    """
+    Move the seeker/hider following the given direction
+    Args:
+        mp (list[list[int]]): current map
+        mv (str, optional): Direction. Defaults to None.
+        loc (tuple[int, int], optional): Current location.
+        person (int, optional): Hider/Seeker. Defaults to Seeker.
+
+    Returns:
+        list[list[int]]: The updated map
+    """
     if mv == None:
         return mp
     (
@@ -92,17 +113,20 @@ def moveTiles(
     elif mv == "tr" and x > 0 and y < len(mp[0]) - 1:
         nx, ny = x - 1, y + 1
 
+    # The seeker catches the hider(s)
     if person == SEEKER and mp[nx][ny] == HIDER:
         mp[nx][ny] = 0
+    # Hiders' suicide
     if person == HIDER and mp[nx][ny] == SEEKER:
         mp[x][y] = 0
         return mp
+    # Swap
     mp[x][y], mp[nx][ny] = mp[nx][ny], mp[x][y]
     # mp[nx][ny] = person
     return mp
 
 
-def setSeeker(mp: list, loc: tuple[int, int]):
+def setSeeker(mp: list[list[int]], loc: tuple[int, int]) -> list[list[int]]:
     """
     Set the seeker in the map
     """
@@ -110,13 +134,15 @@ def setSeeker(mp: list, loc: tuple[int, int]):
         for y in range(len(mp[0])):
             if mp[x][y] == SEEKER:
                 mp[x][y] = 0
+            # Delete old observation
             elif mp[x][y] == OBSERVABLE or mp[x][y] == OVERLAP:
                 mp[x][y] = 0
     x, y = loc
-    mp[x][y] = SEEKER
+    mp[x][y] = SEEKER # Placing
     return mp
 
-def setHiders(mp: list, loc: list[tuple[int, int]]):
+
+def setHiders(mp: list[list[int]], loc: list[tuple[int, int]]) -> list[list[int]]:
     """
     Set the hiders in the map
     """
@@ -124,10 +150,12 @@ def setHiders(mp: list, loc: list[tuple[int, int]]):
         for y in range(len(mp[0])):
             if mp[x][y] == HIDER:
                 mp[x][y] = 0
+            # Del old observation
             elif mp[x][y] == H_OBSERVABLE or mp[x][y] == OVERLAP:
                 mp[x][y] = 0
+            # Del old annoucement
             elif mp[x][y] == ANNOUNCE:
                 mp[x][y] = 0
     for x, y in loc:
-        mp[x][y] = HIDER
+        mp[x][y] = HIDER # Placing
     return mp

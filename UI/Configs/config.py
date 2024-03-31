@@ -1,3 +1,8 @@
+"""
+This file contains the configurations for the game.
+Includes the pre-defined colors, dimensions, and other constants.
+"""
+
 WALL, HIDER, SEEKER, OBSERVABLE, OBSTACLE, ANNOUNCE, H_OBSERVABLE, OVERLAP = 1, 2, 3, 4, 5, 6, 7, 8
 
 HEIGHT, WIDTH = 720, 1080
@@ -18,12 +23,12 @@ ANNOUNCEC = (0, 0, 0)
 HIDER_OBSERVABLEC = (233, 231, 174)
 SEEKER_OBSERVABLEC = (109, 221, 212)
 
-OVERLAPC = (114, 190, 143)
+OVERLAPC = tuple([int((a + b) / 2) for a, b in zip(HIDER_OBSERVABLEC, SEEKER_OBSERVABLEC)])
 
 PATH = (223, 117, 69)
 
 DELAY_TIME = 100  # ms
-CHASE_RANGE_TIME = 100
+CHASE_RANGE_TIME = 50
 
-FONT = "Assets/MadimiOne-Regular.ttf"
-FONT2 = "Assets/OpenSans-Regular.ttf"
+FONT = "UI/Assets/MadimiOne-Regular.ttf"
+FONT2 = "UI/Assets/OpenSans-Regular.ttf"

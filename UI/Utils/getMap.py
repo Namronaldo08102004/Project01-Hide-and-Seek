@@ -1,7 +1,7 @@
 import os
 
 
-def list_map(path: str):
+def list_map(path: str) -> list[str]:
     """
     List all the maps in the given path
     """
@@ -12,7 +12,7 @@ def list_map(path: str):
     return maps
 
 
-def read_map(path: str):
+def read_map(path: str) -> list[list[int]]:
     """
     Read the map from the given path
     """
@@ -20,13 +20,16 @@ def read_map(path: str):
     obs = []
     row, col = 0, 0
     with open(path, "r") as file:
+        # Get the number of rows and columns
         row, col = file.readline().split()
         row, col = int(row), int(col)
         if row <= 0 or col <= 0:
             raise ValueError("The number of rows and columns should be positive")
 
+        # Read the map positioning
         for _ in range(row):
             maps.append(list(file.readline().split()))
+        # Read the obstacles
         while (line := file.readline()) != "":
             obs.append(list(line.split()))
             if len(obs[-1]) != 4:
