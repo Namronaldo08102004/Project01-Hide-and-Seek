@@ -130,7 +130,7 @@ class DisplayMap:
                     pt2 += 1
                 else:
                     pt1 += 1
-            # Move seeker and hiders
+            # Move seeker and hiders (and clear old observable cells)
             self.cur_map = setSeeker(self.cur_map, cur[0])
             self.cur_map = setHiders(self.cur_map, [x.state for x in cur[1]])
             # new obser

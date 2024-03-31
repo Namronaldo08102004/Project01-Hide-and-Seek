@@ -126,6 +126,8 @@ def setHiders(mp: list, loc: list[tuple[int, int]]):
                 mp[x][y] = 0
             elif mp[x][y] == H_OBSERVABLE or mp[x][y] == OVERLAP:
                 mp[x][y] = 0
+            elif mp[x][y] == ANNOUNCE:
+                mp[x][y] = 0
     for x, y in loc:
         mp[x][y] = HIDER
     return mp

@@ -22,11 +22,15 @@ def read_map(path: str):
     with open(path, "r") as file:
         row, col = file.readline().split()
         row, col = int(row), int(col)
+        if row <= 0 or col <= 0:
+            raise ValueError("The number of rows and columns should be positive")
 
         for _ in range(row):
             maps.append(list(file.readline().split()))
         while (line := file.readline()) != "":
             obs.append(list(line.split()))
+            if len(obs[-1]) != 4:
+                raise Exception("Obstacles should have 4 arguments")
 
     # Convert to int
     for i in range(row):
@@ -37,13 +41,13 @@ def read_map(path: str):
             obs[i][j] = int(obs[i][j])
 
     # Placing the obstacles
-    try:
-        for o in obs:
-            for i in range(o[0] - 1, o[2]):
-                for j in range(o[1] - 1, o[3]):
-                    maps[i][j] = 5
-    except:
-        pass
+    for o in obs:
+        for i in range(o[0] - 1, o[2]):
+            for j in range(o[1] - 1, o[3]):
+                if i >= row or j >= col:
+                    raise Exception("Obstacles should be placed within the map")
+                if maps[i][j] != 0:
+                    raise Exception("Obstacle should be placed at empty cells")
+                maps[i][j] = 5
 
     return maps
-
