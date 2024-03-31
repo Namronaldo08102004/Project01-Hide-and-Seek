@@ -166,8 +166,7 @@ class Level3 (Level):
             if (isHider):
                 listHiderPositions.append(foundHider)
             else:
-                if (self.listSeekerObservableCells[i] in self.listWallIntersections):
-                    self.visitedMatrix[self.listSeekerObservableCells[i][0]][self.listSeekerObservableCells[i][1]] = True
+                self.visitedMatrix[self.listSeekerObservableCells[i][0]][self.listSeekerObservableCells[i][1]] = True
                 
         return listHiderPositions
     
@@ -303,43 +302,59 @@ class Level3 (Level):
             bestNextPosition = None
             maxX = -1
             Y = -1
+            isIntersection: bool = None
             maxNumCellsExcludeIntersectionsHiderCanMoveToNotBeCaughtInTheNextMove = -1
             maxNumObservableCellsExcludeIntersections = -1
-            isCorner: bool = None
             
             for i in range (0, len(listHiderValidNeighbor)):
                 if (listTuplesWithBestY[i][0] > maxX):
                     maxX = listTuplesWithBestY[i][0]
                     Y = listTuplesWithBestY[i][1]
+                    
+                    if (listHiderValidNeighbor[i] in self.listWallIntersections and len(getValidNeighbors(listHiderValidNeighbor[i], self.map.matrix)) <= 2):
+                        isIntersection = True
+                    else:
+                        isIntersection = False
+                    
                     maxNumCellsExcludeIntersectionsHiderCanMoveToNotBeCaughtInTheNextMove = min([len(list((set(getValidNeighbors(listHiderValidNeighbor[i], self.map.matrix)) 
                                                                                       - (set(getValidNeighbors(seekerNeighbor, self.map.matrix)).union([seekerNeighbor]))) - set(self.listWallIntersections)))
                                                                              for seekerNeighbor in listSeekerValidNeighbor])
                     maxNumObservableCellsExcludeIntersections = min([len(list((set(hider.getObservableCellsOfHider(hiderObservableCell))
                                                                           .union(set([listHiderValidNeighbor[i]]))) - set(self.listWallIntersections))) 
                                                                      for hiderObservableCell in list(set(hider.getObservableCellsOfHider(listHiderValidNeighbor[i])).union(set([listHiderValidNeighbor[i]])))])
-                    
-                    if (self.checkCorner(listHiderValidNeighbor[i])):
-                        isCorner = True
-                    else:
-                        isCorner = False
                     
                     bestNextPosition = listHiderValidNeighbor[i]
                 elif (listTuplesWithBestY[i][0] == maxX and listTuplesWithBestY[i][1] > Y):
                     Y = listTuplesWithBestY[i][1]
+                    
+                    if (listHiderValidNeighbor[i] in self.listWallIntersections and len(getValidNeighbors(listHiderValidNeighbor[i], self.map.matrix)) <= 2):
+                        isIntersection = True
+                    else:
+                        isIntersection = False
+                    
                     maxNumCellsExcludeIntersectionsHiderCanMoveToNotBeCaughtInTheNextMove = min([len(list((set(getValidNeighbors(listHiderValidNeighbor[i], self.map.matrix)) 
                                                                                       - (set(getValidNeighbors(seekerNeighbor, self.map.matrix)).union([seekerNeighbor]))) - set(self.listWallIntersections)))
                                                                              for seekerNeighbor in listSeekerValidNeighbor])
                     maxNumObservableCellsExcludeIntersections = min([len(list((set(hider.getObservableCellsOfHider(hiderObservableCell))
                                                                           .union(set([listHiderValidNeighbor[i]]))) - set(self.listWallIntersections))) 
                                                                      for hiderObservableCell in list(set(hider.getObservableCellsOfHider(listHiderValidNeighbor[i])).union(set([listHiderValidNeighbor[i]])))])
-                    
-                    if (self.checkCorner(listHiderValidNeighbor[i])):
-                        isCorner = True
-                    else:
-                        isCorner = False
                         
                     bestNextPosition = listHiderValidNeighbor[i]
                 elif (listTuplesWithBestY[i][0] == maxX and listTuplesWithBestY[i][1] == Y
+                      and ((listHiderValidNeighbor[i] not in self.listWallIntersections) or 
+                           len(getValidNeighbors(listHiderValidNeighbor[i], self.map.matrix)) >= 3) and isIntersection):
+                    isIntersection = False
+                    maxNumCellsExcludeIntersectionsHiderCanMoveToNotBeCaughtInTheNextMove = min([len(list((set(getValidNeighbors(listHiderValidNeighbor[i], self.map.matrix)) 
+                                                                                      - (set(getValidNeighbors(seekerNeighbor, self.map.matrix)).union([seekerNeighbor]))) - set(self.listWallIntersections)))
+                                                                             for seekerNeighbor in listSeekerValidNeighbor])
+                    maxNumObservableCellsExcludeIntersections = min([len(list((set(hider.getObservableCellsOfHider(hiderObservableCell))
+                                                                          .union(set([listHiderValidNeighbor[i]]))) - set(self.listWallIntersections))) 
+                                                                     for hiderObservableCell in list(set(hider.getObservableCellsOfHider(listHiderValidNeighbor[i])).union(set([listHiderValidNeighbor[i]])))])
+                        
+                    bestNextPosition = listHiderValidNeighbor[i]
+                elif (listTuplesWithBestY[i][0] == maxX and listTuplesWithBestY[i][1] == Y 
+                      and ((listHiderValidNeighbor[i] not in self.listWallIntersections) or 
+                           len(getValidNeighbors(listHiderValidNeighbor[i], self.map.matrix)) >= 3) and not isIntersection
                       and min([len(list((set(getValidNeighbors(listHiderValidNeighbor[i], self.map.matrix)) 
                                          - (set(getValidNeighbors(seekerNeighbor, self.map.matrix)).union([seekerNeighbor]))) - set(self.listWallIntersections)))
                                for seekerNeighbor in listSeekerValidNeighbor]) > maxNumCellsExcludeIntersectionsHiderCanMoveToNotBeCaughtInTheNextMove):
@@ -349,14 +364,11 @@ class Level3 (Level):
                     maxNumObservableCellsExcludeIntersections = min([len(list((set(hider.getObservableCellsOfHider(hiderObservableCell))
                                                                           .union(set([listHiderValidNeighbor[i]]))) - set(self.listWallIntersections))) 
                                                                      for hiderObservableCell in list(set(hider.getObservableCellsOfHider(listHiderValidNeighbor[i])).union(set([listHiderValidNeighbor[i]])))])
-                    
-                    if (self.checkCorner(listHiderValidNeighbor[i])):
-                        isCorner = True
-                    else:
-                        isCorner = False
                         
                     bestNextPosition = listHiderValidNeighbor[i]
                 elif (listTuplesWithBestY[i][0] == maxX and listTuplesWithBestY[i][1] == Y
+                      and ((listHiderValidNeighbor[i] not in self.listWallIntersections) or 
+                           len(getValidNeighbors(listHiderValidNeighbor[i], self.map.matrix)) >= 3) and not isIntersection
                       and min([len(list((set(getValidNeighbors(listHiderValidNeighbor[i], self.map.matrix)) 
                                          - (set(getValidNeighbors(seekerNeighbor, self.map.matrix)).union([seekerNeighbor]))) - set(self.listWallIntersections)))
                                for seekerNeighbor in listSeekerValidNeighbor]) == maxNumCellsExcludeIntersectionsHiderCanMoveToNotBeCaughtInTheNextMove
@@ -369,21 +381,6 @@ class Level3 (Level):
                                                                           .union(set([listHiderValidNeighbor[i]]))) - set(self.listWallIntersections))) 
                                                                      for hiderObservableCell in list(set(hider.getObservableCellsOfHider(listHiderValidNeighbor[i])).union(set([listHiderValidNeighbor[i]])))])
                     
-                    if (self.checkCorner(listHiderValidNeighbor[i])):
-                        isCorner = True
-                    else:
-                        isCorner = False
-                    
-                    bestNextPosition = listHiderValidNeighbor[i]
-                elif (listTuplesWithBestY[i][0] == maxX and listTuplesWithBestY[i][1] == Y
-                      and min([len(list((set(getValidNeighbors(listHiderValidNeighbor[i], self.map.matrix)) 
-                                         - (set(getValidNeighbors(seekerNeighbor, self.map.matrix)).union([seekerNeighbor]))) - set(self.listWallIntersections)))
-                               for seekerNeighbor in listSeekerValidNeighbor]) == maxNumCellsExcludeIntersectionsHiderCanMoveToNotBeCaughtInTheNextMove
-                      and min([len(list((set(hider.getObservableCellsOfHider(hiderObservableCell))
-                                         .union(set([listHiderValidNeighbor[i]]))) - set(self.listWallIntersections))) 
-                               for hiderObservableCell in list(set(hider.getObservableCellsOfHider(listHiderValidNeighbor[i])).union(set([listHiderValidNeighbor[i]])))])
-                      == maxNumObservableCellsExcludeIntersections and (not self.checkCorner(listHiderValidNeighbor[i]) and isCorner)):
-                    isCorner = False
                     bestNextPosition = listHiderValidNeighbor[i]
                         
             return bestNextPosition
