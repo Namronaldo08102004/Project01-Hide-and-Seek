@@ -1,4 +1,4 @@
-from Source.util import *
+from AI.util import *
 
 class Map:
     def __init__ (self, matrix: list[list[int]]):

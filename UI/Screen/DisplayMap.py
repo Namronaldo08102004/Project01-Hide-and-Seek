@@ -1,9 +1,9 @@
 from copy import deepcopy
 
 import pygame
-from Source.Level1 import *
-from Source.Level2 import *
-from Source.Level3 import *
+from AI.Level1 import *
+from AI.Level2 import *
+from AI.Level3 import *
 
 from UI.Configs.config import *
 from UI.Widget.widget import *

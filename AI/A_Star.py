@@ -1,5 +1,5 @@
 from heapq import heappush, heappop
-from Source.util import *
+from AI.util import *
 
 def A_Star (start: tuple[int, int], goal: tuple[int, int], map: list[list[int]], visitedMatrix: list[list[bool]] = None) -> Node:
     node: Node = None

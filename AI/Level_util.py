@@ -1,6 +1,6 @@
-from Source.Map import *
+from AI.Map import *
 from random import choice
-from Source.A_Star import *
+from AI.A_Star import *
     
 class Hider:
     def __init__ (self, state: tuple[int, int], startPosition: tuple[int, int] = None, map = None, visitedMatrix = None, id: int = None):
@@ -717,14 +717,17 @@ class Level:
         goal = A_Star(startPosition, goalPosition, self.map.matrix, visitedMatrix)
         shortestPath = []
         
-        while (goal is not None):
-            shortestPath.append(goal.state)
-            goal = goal.parent
+        if (goal is not None):
+            while (goal is not None):
+                shortestPath.append(goal.state)
+                goal = goal.parent
         
-        shortestPath = shortestPath[:-1]
-        shortestPath = shortestPath[::-1]
+            shortestPath = shortestPath[:-1]
+            shortestPath = shortestPath[::-1]
+            
+            return shortestPath
         
-        return shortestPath
+        return None
     
     def countNumWallsBetweenTwoPositions (self, position1: tuple[int, int], position2: tuple[int, int]):
         X1 = position1[1]

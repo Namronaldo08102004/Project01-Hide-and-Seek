@@ -1,4 +1,4 @@
-from Source.Level_util import *
+from AI.Level_util import *
 
 class Level3 (Level):
     """
@@ -99,16 +99,15 @@ class Level3 (Level):
             self.gotoIntersection = True
         
         """
-        The below attribute is used to store the state of the seeker before catching the hider, three elements in the list are:
+        The below attribute is used to store the state of the seeker before catching the hider, two elements in each stae are:
             + The position of the seeker before catching the hider
             + The position of the seeker in the next move
-            + The number of remaining hiders in the map
         """
         self.roadOfSeekerWhenCatchHider: list[tuple[tuple[int, int], tuple[int, int]]] = []
         
         """
         This attribute stores hiders which are permanently ignored by the seeker
-        If the number of ignored hiders is equal to the number of hiders currently in the map, the seeker will stop the game
+        If the number of ignored hiders is equal to the number of hiders currently in the map, the seeker will give up
         """
         self.ignoredHiders: list[Hider] = []
         self.giveUp: bool = False
@@ -139,15 +138,16 @@ class Level3 (Level):
         for intersection in unvisitedWallIntersections:
             isCorner = self.checkCorner(intersection[0])
             if (intersection[1] - 0.9 * isCorner < minHeuristic):
-                nearestWallIntersection = intersection[0]
-                shorestPath = self.getShortestPath(startPositionForFinding, nearestWallIntersection)
-                AStar = len(shorestPath)
-                minHeuristic = intersection[1] - 0.9 * isCorner
-            elif (intersection[1] - 0.9 * isCorner == minHeuristic):
-                shorestPath = self.getShortestPath(startPositionForFinding, intersection[0])
-                if (AStar is None or (AStar is not None and len(shorestPath) < AStar)):
+                shortestPath = self.getShortestPath(startPositionForFinding, intersection[0])
+                if (shortestPath is not None): #? If the seeker can reach the wall intersection
                     nearestWallIntersection = intersection[0]
-                    AStar = len(shorestPath)
+                    AStar = len(shortestPath)
+                    minHeuristic = intersection[1] - 0.9 * isCorner
+            elif (intersection[1] - 0.9 * isCorner == minHeuristic):
+                shortestPath = self.getShortestPath(startPositionForFinding, intersection[0])
+                if (shortestPath is not None and (AStar is None or (AStar is not None and len(shortestPath) < AStar))):
+                    nearestWallIntersection = intersection[0]
+                    AStar = len(shortestPath)
         
         return nearestWallIntersection
     
@@ -206,7 +206,11 @@ class Level3 (Level):
             nashTable: list[list[tuple[int, int]]] = []
             for i in range (0, len(listSeekerValidNeighbor)):
                 lst = []
-                X = len(self.getShortestPath(listSeekerValidNeighbor[i], hiderPosition))
+                
+                shortestPath = self.getShortestPath(listSeekerValidNeighbor[i], hiderPosition)
+                if (shortestPath is None):
+                    return None
+                X = len(shortestPath)
                 for j in range (0, len(listHiderValidNeighbor)):
                     Y = len(self.getShortestPath(listHiderValidNeighbor[j], listSeekerValidNeighbor[i]))
                     lst.append((X, Y))
@@ -279,7 +283,11 @@ class Level3 (Level):
             nashTable: list[list[tuple[int, int]]] = []
             for i in range (0, len(listHiderValidNeighbor)):
                 lst = []
-                X = len(self.getShortestPath(listHiderValidNeighbor[i], seekerPosition))
+                
+                shortestPath = self.getShortestPath(listHiderValidNeighbor[i], seekerPosition)
+                if (shortestPath is None):
+                    return None
+                X = len(shortestPath)
                 for j in range (0, len(listSeekerValidNeighbor)):
                     Y = len(self.getShortestPath(listSeekerValidNeighbor[j], listHiderValidNeighbor[i]))
                     lst.append((X, Y))
@@ -447,7 +455,7 @@ class Level3 (Level):
                 hiderPosition = goal.state
                 
                 NextMove = self.getBestMoveWhenHiderMeetSeeker(self.seekerPosition, goal)
-                if ((self.seekerPosition, NextMove) not in self.roadOfSeekerWhenCatchHider):
+                if (NextMove is not None and (self.seekerPosition, NextMove) not in self.roadOfSeekerWhenCatchHider):
                     self.roadOfSeekerWhenCatchHider.append((self.seekerPosition, NextMove))
                     
                     self.seekerPosition = NextMove
@@ -510,8 +518,12 @@ class Level3 (Level):
                                         if (col >= 0 and col < self.map.numCols):
                                             if (not self.visitedMatrix[row][col]):
                                                 self.seekerGoalPosition = (row, col)
-                                                found = True
-                                                break
+                                                self.seekerPath = self.getShortestPath(self.seekerPosition, self.seekerGoalPosition, self.visitedMatrix)
+                                                
+                                                if (self.seekerPath is not None):
+                                                    self.seekerPathMove = 0
+                                                    found = True
+                                                    break
                                 
                                 if (found):
                                     break
@@ -521,11 +533,9 @@ class Level3 (Level):
                     
                             level = level + 1
                             
-                        if (self.seekerGoalPosition is not None):
-                            self.seekerPath = self.getShortestPath(self.seekerPosition, self.seekerGoalPosition, self.visitedMatrix)
-                            self.seekerPathMove = 0
-                        else:
-                            raise Exception ("Your map is missing the hider")
+                        if (self.seekerPath is None):
+                            self.giveUp = True
+                            return
                         
                     self.gotoIntersection = True
                     self.gotoHider = False
@@ -548,8 +558,12 @@ class Level3 (Level):
                                     if (col >= 0 and col < self.map.numCols):
                                         if (not self.visitedMatrix[row][col]):
                                             self.seekerGoalPosition = (row, col)
-                                            found = True
-                                            break
+                                            self.seekerPath = self.getShortestPath(self.seekerPosition, self.seekerGoalPosition, self.visitedMatrix)
+                                            
+                                            if (self.seekerPath is not None):
+                                                self.seekerPathMove = 0
+                                                found = True
+                                                break
                             
                             if (found):
                                 break
@@ -559,11 +573,9 @@ class Level3 (Level):
                 
                         level = level + 1
                         
-                    if (self.seekerGoalPosition is not None):
-                        self.seekerPath = self.getShortestPath(self.seekerPosition, self.seekerGoalPosition, self.visitedMatrix)
-                        self.seekerPathMove = 0
-                    else:
-                        raise Exception ("Your map is missing the hider")
+                    if (self.seekerPath is None):
+                        self.giveUp = True
+                        return
                     
                 self.gotoIntersection = True
                 self.gotoHider = False
@@ -623,8 +635,12 @@ class Level3 (Level):
                                         if (col >= 0 and col < self.map.numCols):
                                             if (not self.visitedMatrix[row][col]):
                                                 self.seekerGoalPosition = (row, col)
-                                                found = True
-                                                break
+                                                self.seekerPath = self.getShortestPath(self.seekerPosition, self.seekerGoalPosition, self.visitedMatrix)
+                                                
+                                                if (self.seekerPath is not None):
+                                                    self.seekerPathMove = 0
+                                                    found = True
+                                                    break
                                 
                                 if (found):
                                     break
@@ -634,11 +650,9 @@ class Level3 (Level):
                     
                             level = level + 1
                             
-                        if (self.seekerGoalPosition is not None):
-                            self.seekerPath = self.getShortestPath(self.seekerPosition, self.seekerGoalPosition, self.visitedMatrix)
-                            self.seekerPathMove = 0
-                        else:
-                            raise Exception ("Your map is missing the hider")
+                        if (self.seekerPath is None):
+                            self.giveUp = True
+                            return
                     
                     self.gotoIntersection = True
                     self.gotoHider = False
@@ -661,8 +675,12 @@ class Level3 (Level):
                                     if (col >= 0 and col < self.map.numCols):
                                         if (not self.visitedMatrix[row][col]):
                                             self.seekerGoalPosition = (row, col)
-                                            found = True
-                                            break
+                                            self.seekerPath = self.getShortestPath(self.seekerPosition, self.seekerGoalPosition, self.visitedMatrix)
+                                            
+                                            if (self.seekerPath is not None):
+                                                self.seekerPathMove = 0
+                                                found = True
+                                                break
                             
                             if (found):
                                 break
@@ -672,11 +690,9 @@ class Level3 (Level):
                 
                         level = level + 1
                         
-                    if (self.seekerGoalPosition is not None):
-                        self.seekerPath = self.getShortestPath(self.seekerPosition, self.seekerGoalPosition, self.visitedMatrix)
-                        self.seekerPathMove = 0
-                    else:
-                        raise Exception ("Your map is missing the hider")
+                    if (self.seekerPath is None):
+                        self.giveUp = True
+                        return
                 
                 self.gotoIntersection = True
                 self.gotoHider = False

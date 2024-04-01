@@ -1,4 +1,4 @@
-from Source.Level_util import *
+from AI.Level_util import *
 
 class Level1 (Level):
     """
@@ -22,6 +22,8 @@ class Level1 (Level):
     """ 
     def __init__ (self, map: Map):
         Level.__init__ (self, map)
+        
+        self.giveUp: bool = False #! This attribute is True when the seeker realizes that it cannot find the hider (there is no ways to go to remaining hiders)
         
         #! Define a temporary matrix for saving cells that were identified to not include hider
         self.visitedMatrix: list[list[bool]] = []
@@ -99,11 +101,21 @@ class Level1 (Level):
         if (self.IdentifiedHider is not None):
             self.goalPosition = self.IdentifiedHider
             self.path = self.getShortestPath(self.seekerPosition, self.goalPosition, self.visitedMatrix)
-            self.pathMove = 0
+            
+            if (self.path is None):
+                self.giveUp = True
+            else:
+                self.pathMove = 0
+                
         elif (self.IdentifiedHider is None and self.IdentifiedAnnouncement is not None):
             self.goalPosition = self.IdentifiedAnnouncement
             self.path = self.getShortestPath(self.seekerPosition, self.goalPosition, self.visitedMatrix)
-            self.pathMove = 0
+            
+            if (self.path is None):
+                self.giveUp = True
+            else:
+                self.pathMove = 0
+                
         else:
             self.goalPosition: tuple[int, int] = self.getNearestWallIntersection()
             self.path: list[tuple[int, int]] = self.getShortestPath(self.seekerPosition, self.goalPosition, self.visitedMatrix)
@@ -141,15 +153,16 @@ class Level1 (Level):
         for intersection in unvisitedWallIntersections:
             isCorner = self.checkCorner(intersection[0])
             if (intersection[1] - 0.9 * isCorner < minHeuristic):
-                nearestWallIntersection = intersection[0]
-                shorestPath = self.getShortestPath(startPositionForFinding, nearestWallIntersection, self.visitedMatrix)
-                AStar = len(shorestPath)
-                minHeuristic = intersection[1] - 0.9 * isCorner
-            elif (intersection[1] - 0.9 * isCorner == minHeuristic):
-                shorestPath = self.getShortestPath(startPositionForFinding, intersection[0], self.visitedMatrix)
-                if (AStar is None or (AStar is not None and len(shorestPath) < AStar)):
+                shortestPath = self.getShortestPath(startPositionForFinding, intersection[0], self.visitedMatrix)
+                if (shortestPath is not None): #? If the seeker can reach the wall intersection
                     nearestWallIntersection = intersection[0]
-                    AStar = len(shorestPath)
+                    AStar = len(shortestPath)
+                    minHeuristic = intersection[1] - 0.9 * isCorner
+            elif (intersection[1] - 0.9 * isCorner == minHeuristic):
+                shortestPath = self.getShortestPath(startPositionForFinding, intersection[0], self.visitedMatrix)
+                if (shortestPath is not None and (AStar is None or (AStar is not None and len(shortestPath) < AStar))):
+                    nearestWallIntersection = intersection[0]
+                    AStar = len(shortestPath)
         
         return nearestWallIntersection
     
@@ -189,7 +202,12 @@ class Level1 (Level):
         if (self.IdentifiedHider is not None and self.goalPosition != self.IdentifiedHider):
             self.goalPosition = self.IdentifiedHider
             self.path = self.getShortestPath(self.seekerPosition, self.goalPosition, self.visitedMatrix)
-            self.pathMove = 0
+            
+            if (self.path is None):
+                self.giveUp = True
+            else:    
+                self.pathMove = 0
+                
             return
         
         if (self.seekerPosition == self.goalPosition or self.visitedMatrix[self.goalPosition[0]][self.goalPosition[1]]):
@@ -213,8 +231,12 @@ class Level1 (Level):
                                     if (col >= 0 and col < self.map.numCols):
                                         if (not self.visitedMatrix[row][col]):
                                             self.goalPosition = (row, col)
-                                            found = True
-                                            break
+                                            self.path = self.getShortestPath(self.seekerPosition, self.goalPosition, self.visitedMatrix)
+                                            
+                                            if (self.path is not None):
+                                                self.pathMove = 0
+                                                found = True
+                                                break
                             
                             if (found):
                                 break
@@ -224,11 +246,9 @@ class Level1 (Level):
                 
                         level = level + 1
                         
-                    if (self.goalPosition is not None):
-                        self.path = self.getShortestPath(self.seekerPosition, self.goalPosition, self.visitedMatrix)
-                        self.pathMove = 0
-                    else:
-                        raise Exception ("Your map is missing the hider")
+                    if (self.path is None):
+                        self.giveUp = True
+                        return
                     
     def level1 (self):
         """
@@ -239,23 +259,24 @@ class Level1 (Level):
             + The current score of the game
             + The list of cells that the seeker can observe at the current time
             + The announcement that the hider broadcast (It can be None if it does not exist)
+            + Give Up or not
         """
         listThingsInLevel1 = []
-        listThingsInLevel1.append((self.seekerPosition, self.hiderPosition, self.score, self.listObservableCells, self.announcement))
+        listThingsInLevel1.append((self.seekerPosition, self.hiderPosition, self.score, self.listObservableCells, self.announcement, self.giveUp))
         yield listThingsInLevel1[-1]
                 
-        while (True):
+        while (not self.giveUp):
             if (self.takeTurn == SEEKER):
                 self.seekerTakeTurn()
                 self.takeTurn = HIDER
                 if (self.seekerPosition != self.hiderPosition):
                     self.numSeekerSteps = self.numSeekerSteps + 1
                     self.score = self.score - 1
-                    listThingsInLevel1.append((self.seekerPosition, self.hiderPosition, self.score, self.listObservableCells, self.announcement))
+                    listThingsInLevel1.append((self.seekerPosition, self.hiderPosition, self.score, self.listObservableCells, self.announcement, self.giveUp))
                     yield listThingsInLevel1[-1]
                 else:
                     self.score = self.score + 20
-                    listThingsInLevel1.append((self.seekerPosition, self.hiderPosition, self.score, self.listObservableCells, self.announcement))
+                    listThingsInLevel1.append((self.seekerPosition, self.hiderPosition, self.score, self.listObservableCells, self.announcement, self.giveUp))
                     yield listThingsInLevel1[-1]
                     break
             else:
@@ -272,5 +293,9 @@ class Level1 (Level):
                             self.announcementTime = None
                 else:
                     break
+                
+        if (self.giveUp):
+            listThingsInLevel1.append((self.seekerPosition, self.hiderPosition, self.score, self.listObservableCells, self.announcement, self.giveUp))
+            yield listThingsInLevel1[-1]
         
         return None
