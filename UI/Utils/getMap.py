@@ -45,12 +45,12 @@ def read_map(path: str) -> list[list[int]]:
 
     # Placing the obstacles
     for o in obs:
-        for i in range(o[0] - 1, o[2]):
-            for j in range(o[1] - 1, o[3]):
+        for i in range(o[0], o[2] + 1):
+            for j in range(o[1], o[3] + 1):
                 if i >= row or j >= col:
                     raise Exception("Obstacles should be placed within the map")
                 if maps[i][j] != 0:
-                    raise Exception("Obstacle should be placed at empty cells")
+                    raise Exception("Obstacles should be placed at empty cells")
                 maps[i][j] = 5
 
     return maps

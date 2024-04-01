@@ -47,6 +47,9 @@ class App:
         Change the screen based on the current screen.
         If the HomeScreen is run and the level is not -1, then add a RunScreen to the screen queue.
         """
+        
+        # If the current screen is HomeScreen
+        # and the level is not -1
         if self.screen_queue[-1].__class__.__name__ == "HomeScreen":
             if self.screen_queue[-1].level == 5:
                 self.isRunning = False
@@ -55,6 +58,7 @@ class App:
                     RunScreen(self.screen_queue[-1].level, self.display)
                 )
                 self.screen_queue[-1].__initiate__()
+        # The back button is clicked, return to homescreen
         elif self.screen_queue[-1].__class__.__name__ == "RunScreen":
             if self.screen_queue[-1].back2HC:
                 self.screen_queue.pop()
