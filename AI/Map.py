@@ -5,7 +5,7 @@ class Map:
         #! Read the size of map
         self.numRows, self.numCols = len(matrix), len(matrix[0])
         
-        #! Read Adjacency Matrix
+        #! Read the position of the seeker and all hiders from the map
         self.matrix = matrix
         self.seekerPosition: tuple[int, int] = None
         self.listHiderPositions: list[tuple[int, int]] = []

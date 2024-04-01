@@ -3,15 +3,18 @@ from random import choice
 from AI.A_Star import *
     
 class Hider:
+    """
+    This class is used to create hider objects, served for comparing two hider objects in level 2 and moving hiders in level 3
+    """
     def __init__ (self, state: tuple[int, int], startPosition: tuple[int, int] = None, map = None, visitedMatrix = None, id: int = None):
-        self.id = id
+        self.id = id #? This attribute is used to compare two hider objects
         self.state = state
-        self.startPosition = startPosition
+        self.startPosition = startPosition #? This attribute is used to calculate the shortest path from a certain position to the hider
         self.map = map
-        self.visitedMatrix = visitedMatrix
+        self.visitedMatrix = visitedMatrix 
         
         self.hiderObservableCells = self.getObservableCellsOfHider(self.state)
-        self.identifiedSeeker = None
+        self.identifiedSeeker = None #? This attribute is used to pass into parameters of A_Star function in __lt__ method
         
     def __lt__ (self, other):
         if (self.startPosition is not None and other.startPosition is not None):
@@ -36,6 +39,10 @@ class Hider:
             
             return len(shortestPath1) < len(shortestPath2)
     
+    """
+    Three below methods are used to compare two hider objects, as well as to hash them when we add them into a set
+    (We used set structure in level 2)
+    """
     def __eq__ (self, other):
         if (self.id is not None and other.id is not None):
             return self.id == other.id
@@ -50,9 +57,17 @@ class Hider:
         return hash(self.state)
     
     def getObservableCellsOfHider (self, hiderPosition: tuple[int, int]):
+        """
+        Get the observable cells of the hider.
+        """
         mapNumRows = len(self.map)
         mapNumCols = len(self.map[0])
         
+        """
+        Firstly, we create a boolean matrix with the maximum size of 5x5 around the hider position (We only get valid cells in the map)
+        We initially assign False to the cells that are walls or obstacles, and True to the other cells
+        Through instantiate this matrix, we can get the exact position of the hider in the matrix, which supports us to identify the observable cells
+        """
         radius_2_matrix: list[list[bool]] = []
         hider_position_in_matrix: tuple[int, int] = None
         for row in range (hiderPosition[0] - 2, hiderPosition[0] + 3):
@@ -70,13 +85,40 @@ class Hider:
                             hider_position_in_matrix = (len(radius_2_matrix), len(tempList) - 1)
                     
                 radius_2_matrix.append(tempList)
-                
+        
+        """
+        We will use the below cases to assign False to the cells that are not observable by the hider
+        Consider cells in the radius 1 around the hider position
+            + If the cell is a wall or an obstacle, we will assign False to cells in the larger radius (refered in the guidelines of lecturer)
+            + We also consider aside cells of a certain cell in the radius 1, because if two aside cells are walls or obstacles, 
+            we can assign False to cells which are in the area created by the map, two lines from the hider position to those two aside cells
+            
+             ------ ------ ------ ------ ------
+            |  UO  |  UO  |  UO  |      |      |
+            |      |      |      |      |      |
+             ------ ------ ------ ------ ------
+            |      | Wall | Wall |      |      |
+            |      |      |      |      |      |
+             ------ ------ ------ ------ ------
+            |      |      | Hider|      |      |
+            |      |      |      |      |      |
+             ------ ------ ------ ------ ------
+            |      |      |      |      |      |
+            |      |      |      |      |      |
+             ------ ------ ------ ------ ------
+            |      |      |      |      |      |
+            |      |      |      |      |      |
+             ------ ------ ------ ------ ------
+            
+            UO: Unobservable
+            
+        """
+               
         X = hider_position_in_matrix[0]
         Y = hider_position_in_matrix[1]
         numRows = len(radius_2_matrix)
         numCols = len(radius_2_matrix[0])
                 
-        #! Check in the radius 1 around the current seeker position
         #? Case 1
         if (X - 1 >= 0 and Y - 1 >= 0 and radius_2_matrix[X - 1][Y - 1] == False):
             if (X - 2 >= 0 and Y - 2 >= 0):    
@@ -214,6 +256,9 @@ class Hider:
                 if (X - 1 >= 0 and Y - 2 >= 0):
                     radius_2_matrix[X - 1][Y - 2] = False
         
+        """
+        From the boolean matrix, we can get the observable cells of the hider in the original map
+        """
         listObservablePositions = []
         index_row = 0
         for row in range (hiderPosition[0] - 2, hiderPosition[0] + 3):
@@ -231,6 +276,11 @@ class Hider:
         return listObservablePositions
     
     def identifyObservableSeeker (self, seekerPosition: tuple[int, int]):
+        """
+        This function is used to identify whether the seeker is in the observable cells of the hider
+            + If the seeker is in the observable cells, we will return its position
+            + Otherwise, we will return None
+        """
         Position: tuple[int, int] = None
         
         for cell in self.hiderObservableCells:
@@ -241,6 +291,17 @@ class Hider:
         return Position
     
 class Level:
+    """
+    This class is used to store common methods and attributes used in all levels in the game
+    In our program, we mention many times about wall intersections, so below is the definition of wall intersections:
+         ------ ------
+        |      |      |
+        |      |      |
+         ------ ------
+        |      | <----
+        |      | 
+         ------
+    """
     def __init__ (self, map: Map):
         self.map: Map = map
         self.score: int = 0
@@ -249,6 +310,10 @@ class Level:
         self.takeTurn: int = SEEKER
         
     def broadcastAnnouncement (self, hiderPosition: tuple[int, int]) -> tuple[int, int]:
+        """
+        This function is used to broadcast the announcement from a certain position of hider
+        Announcement will be broadcasted at a random position in the radius 3 around the hider position, including walls or obstacles
+        """
         listPositions = []
         
         for level in range (1, 3):
@@ -262,6 +327,11 @@ class Level:
         return randomPosition
     
     def getObservableCells (self, seekerPosition: tuple[int, int]):
+        """
+        Get the observable cells of the seeker.
+        The flow of this function is similar to the getObservableCellsOfHider function in the Hider class
+        """
+        
         radius_3_matrix: list[list[bool]] = []
         seeker_position_in_matrix: tuple[int, int] = None
         for row in range (seekerPosition[0] - 3, seekerPosition[0] + 4):
@@ -285,7 +355,6 @@ class Level:
         numRows = len(radius_3_matrix)
         numCols = len(radius_3_matrix[0])
                 
-        #! Check in the radius 1 around the current seeker position
         #? Case 1
         if (X - 1 >= 0 and Y - 1 >= 0 and radius_3_matrix[X - 1][Y - 1] == False):
             if (X - 3 >= 0 and Y - 3 >= 0):    
@@ -713,7 +782,10 @@ class Level:
         return listObservablePositions
     
     def getShortestPath (self, startPosition: tuple[int, int], goalPosition: tuple[int, int], visitedMatrix = None) -> list[tuple[int, int]]:
-        #! Be sure that the path will be from the next step of the start position to the goal position
+        """
+        This function returns the shortest path from the start position to the goal position
+        """
+        
         goal = A_Star(startPosition, goalPosition, self.map.matrix, visitedMatrix)
         shortestPath = []
         
@@ -730,13 +802,24 @@ class Level:
         return None
     
     def countNumWallsBetweenTwoPositions (self, position1: tuple[int, int], position2: tuple[int, int]):
+        """
+        This function returns the number of walls in the shortest path (without any walls in the map) 
+        from the first position to the second position.
+        
+        The algorithm used in this function is based on the Bresenham's line algorithm.
+        From the first position, we consider all Brsenham's lines and Manhattan lines to the second position
+        Then we calculate the number of walls in each line and return the minimum number of walls.
+        
+        This calculating will be considered as an element in the heuristic function for choosing the nearest wall intersections
+        """
         X1 = position1[1]
         X2 = position2[1]
         Y1 = position1[0]
         Y2 = position2[0]
         
-        #! Calculate the number of walls in the shortest path (without any walls in the map) from the current seeker position to this wall intersection
         numWallIntersectionsBetweenThem = 0
+        
+        #! Calculate on Bresenham's lines
         if (X2 <= X1 and Y1 >= Y2):
             if (Y1 - Y2 > X1 - X2):
                 temp1 = 0
@@ -900,6 +983,7 @@ class Level:
                 
                 numWallIntersectionsBetweenThem = min(temp1, temp2)         
         
+        #! Calculate on Manhattan lines
         temp1 = 0
         temp2 = 0           
         if (X2 <= X1 and Y1 >= Y2):
@@ -962,10 +1046,48 @@ class Level:
                 if (self.map.matrix[Y2][X1 - i] in [WALL, OBSTACLE]):
                     temp2 += 1
         
+        #! Calculate the minimum number of walls
         numWallIntersectionsBetweenThem = min(numWallIntersectionsBetweenThem, min(temp1, temp2))
         return numWallIntersectionsBetweenThem
     
     def checkCorner (self, position: tuple[int, int]) -> bool:
+        """
+        Corner is a special wall intersection
+            + It can be surrounded by 3 walls or obstacles
+            + It can be one of 4 corners of the map
+            + If it is in the edge of the map, it can be surrounded by 2 walls or obstacles
+            
+        Below is a demonstration of corners in a specific map:
+         ------ ------ ------ ------ ------ ------ ------
+        |   C  |      |   W  |   C  |      |      |   C  |
+        |      |      |      |      |      |      |      |
+         ------ ------ ------ ------ ------ ------ ------
+        |      |      |   W  |   W  |      |      |      |
+        |      |      |      |      |      |      |      |
+         ------ ------ ------ ------ ------ ------ ------
+        |   W  |   W  |      |      |      |      |      |
+        |      |      |      |      |      |      |      |
+         ------ ------ ------ ------ ------ ------ ------
+        |   C  |   W  |      |      |      |      |      |
+        |      |      |      |      |      |      |      |
+         ------ ------ ------ ------ ------ ------ ------
+        |      |      |   W  |   W  |   W  |      |      |
+        |      |      |      |      |      |      |      |
+         ------ ------ ------ ------ ------ ------ ------
+        |      |      |   W  |   C  |   W  |      |      |
+        |      |      |      |      |      |      |      |
+         ------ ------ ------ ------ ------ ------ ------
+        |   C  |      |   W  |      |      |      |   C  |
+        |      |      |      |      |      |      |      |
+         ------ ------ ------ ------ ------ ------ ------
+         
+        W: Wall or obstacle
+        C: Corner
+        
+        This function returns True if the position is a corner, otherwise it returns False
+        
+        Identifying whether a wall intersection is a corner or not is vital in the heuristic function for choosing the nearest wall intersections
+        """
         row = position[0]
         col = position[1]
         numRows = self.map.numRows

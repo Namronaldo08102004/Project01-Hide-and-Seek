@@ -2,7 +2,16 @@ from AI.Level_util import *
 
 class Level3 (Level):
     """
-        Will be updated later
+    The strategy of this level for the seeker is identical to two previous levels, except for the following points:
+        + The seeker still maintains a matrix of visited cells, but it does not consider this attribute in finding the
+        shortest path to the nearest wall intersection or hiders and announcements. The visited matrix just be used to mark
+        unvisited wall intersections or when the seeker wants to move to a certain cell if all the wall intersections are visited.
+        
+        + When the seeker meets a hider, it will use the Nash theory in Game Theory to find the best move for both the seeker and the hider.
+        The idea of this algorithm will be presented in the description of the function getBestMoveWhenHiderMeetSeeker.
+        
+        + About hiders, because it can move, so we set for each hider to move intelligently when it meets the seeker.
+        Our improvement for hiders will be presented in the description of the function hiderTakeTurn.
     """ 
     def __init__ (self, map: Map):
         Level.__init__ (self, map)
@@ -138,6 +147,7 @@ class Level3 (Level):
         for intersection in unvisitedWallIntersections:
             isCorner = self.checkCorner(intersection[0])
             if (intersection[1] - 0.9 * isCorner < minHeuristic):
+                #! The only difference of this function between Level 3 and two previous levels is not using self.visitedMatrix in the below line
                 shortestPath = self.getShortestPath(startPositionForFinding, intersection[0])
                 if (shortestPath is not None): #? If the seeker can reach the wall intersection
                     nearestWallIntersection = intersection[0]
@@ -195,7 +205,18 @@ class Level3 (Level):
             + Firstly, in each move of the first taker (can be seeker or hider), we get all of tuples (x,y) with y is the best option for the second taker
             + After taking all the tuples satisfying the above statement, we will choose tuples with x is the best option for the first taker.
             + If there are many tuples satisfying that x is the best option, choose tuples with y is the worst option for the second taker
-            + Currently, If there are many tuples satisfying, we obtain the first tuple.
+            
+            + Until now, if there are many tuples satisfying the above statement, we consider two cases:
+                o If the first taker is the seeker, we will choose the cell that the number of cells the hider can move to not be caught in the next move is the smallest
+                o If the first taker is the hider, we will sequentially consider the following conditions, prioritized from the highest to the lowest:
+                    - If the cell is a wall intersection that we still move diagonally if moving to that intersection, choose that cell
+                    - If the cell can allow hider to have the largest number of escape cells (we suppose that the hider thinks that the seeker 
+                    will minimize the number of cells the hider can move to not be caught in the next move), choose that cell
+                    - If the cell can allow hider to observe the largest number of cells excluding wall intersections, choose that cell
+                    
+        Besides, in valid neighbors of the hider when the taker is hider, we will discard the neighbors which are the positions of other hiders to avoid the collapsion
+        We also set the order of the neighbors of the current hider position when hider takes turn based on the trend of the movement from the seeker to the hider,
+        which can help hider consider cells forward instead of towards the seeker.
         """
         hiderPosition = hider.state
         
@@ -419,11 +440,13 @@ class Level3 (Level):
             self.giveUp = True
             return
         
+        #! If the seeker is going to a certain wall intersection
         if (self.gotoIntersection):
             self.seekerPosition = self.seekerPath[self.seekerPathMove]
             self.seekerPathMove = self.seekerPathMove + 1
             self.listSeekerObservableCells = self.getObservableCells(self.seekerPosition)
             
+            #! Update the list of identified hiders
             self.listIdentifiedHiders = self.identifyObservableHiders()
             listIdentifiedAnnouncements = self.identifyObservableAnnouncements()
             
@@ -448,7 +471,8 @@ class Level3 (Level):
                 self.gotoHider = True
                 self.gotoIntersection = False
                 return
-            
+        
+        #! If the seeker is going to a certain hider
         elif (self.gotoHider):
             if (len(self.listIdentifiedHiders) != 0):
                 goal = self.listIdentifiedHiders[0]
@@ -533,7 +557,7 @@ class Level3 (Level):
                     
                             level = level + 1
                             
-                        if (self.seekerPath is None):
+                        if (not found):
                             self.giveUp = True
                             return
                         
@@ -541,6 +565,7 @@ class Level3 (Level):
                     self.gotoHider = False
                     return
             
+            #! This case was built to handle the situation when the hider jumps to the seeker's position to suicide
             else:
                 self.seekerGoalPosition = self.getNearestWallIntersection()
                 if (self.seekerGoalPosition is not None):
@@ -573,7 +598,7 @@ class Level3 (Level):
                 
                         level = level + 1
                         
-                    if (self.seekerPath is None):
+                    if (not found):
                         self.giveUp = True
                         return
                     
@@ -650,7 +675,7 @@ class Level3 (Level):
                     
                             level = level + 1
                             
-                        if (self.seekerPath is None):
+                        if (not found):
                             self.giveUp = True
                             return
                     
@@ -690,7 +715,7 @@ class Level3 (Level):
                 
                         level = level + 1
                         
-                    if (self.seekerPath is None):
+                    if (not found):
                         self.giveUp = True
                         return
                 
@@ -698,6 +723,19 @@ class Level3 (Level):
                 self.gotoHider = False
     
     def hiderTakeTurn (self, hider: Hider):
+        """
+        This function is created to help hider take turn in the game
+        
+        We will consider the following cases:
+            + If the hider is not being chased by the seeker, the hider will take the best move to maximize the number of observable cells.
+            This helps hider to avoid standing at corners or wall intersections, which can be easily caught by the seeker
+            
+            + If the hider is being chased by the seeker, the hider will take the best move to avoid being caught by the seeker
+            based on the method getBestMoveWhenHiderMeetSeeker
+            Besides, if the hider is being chased by the seeker but cannot observe the seeker, the attribute isBeingChased will helps
+            hider to realize that it is still being chased by the seeker, and choose the best move for the next step
+        """
+        
         announcementBroadcastByHider = None
         if (len(self.announcementDict) != 0):
             for announcement in self.announcementDict:

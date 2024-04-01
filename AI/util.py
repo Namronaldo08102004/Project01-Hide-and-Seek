@@ -1,3 +1,6 @@
+"""
+This file contains utility functions and classes that are used in the implementation of the AI algorithms.
+"""
 import math
 
 EMPTY = 0
@@ -6,17 +9,33 @@ HIDER = 2
 SEEKER = 3
 OBSERVABLE = 4
 OBSTACLE = 5
+            
+def manhattanDistance (point1: tuple[int, int], point2: tuple[int, int]):
+    """
+    Calculate the Manhattan distance between two points.
+    """
+    return abs(point2[0] - point1[0]) + abs(point2[1] - point1[1])
 
-WHITE = (255, 255, 255)
-BLACK = (0, 0, 0)
-LIGHTBLUE = (173, 216, 230)
-GRAY = (128, 128, 128)
-LIGHTPINK = (255, 182, 193)
-SKINCOLOR = (255, 224, 189)
-RED = (255, 0, 0)
-GREEN = (0, 171, 28)
-YELLOW = (255, 215, 0)
-BROWN = (128, 64, 0)
+def getValidNeighbors (state: tuple[int, int], map: list[list[int]]) -> list[tuple[int, int]]:
+    """
+    Get the valid neighbors of a state in the map.
+    Walls and obstacles are not considered as valid neighbors.
+    """
+    X, Y = state
+    candidates = [(X + 1, Y - 1), (X + 1, Y + 1), (X - 1, Y - 1), (X - 1, Y + 1), (X + 1, Y), (X, Y - 1), (X, Y + 1), (X - 1, Y)]
+    width = len(map)
+    length = len(map[0])
+
+    result = []
+    for (x, y) in candidates:
+        if 0 <= x <= width - 1 and 0 <= y <= length - 1:
+            check = True
+            if (map[x][y] in [WALL, OBSTACLE]):
+                check = False
+            
+            if (check):
+                result.append((x, y))
+    return result
 
 def dot_product(v1, v2):
     return sum(x * y for x, y in zip(v1, v2))
@@ -29,32 +48,17 @@ def angle_between_vectors(v1, v2):
     mag_v1 = vector_magnitude(v1)
     mag_v2 = vector_magnitude(v2)
     if mag_v1 == 0 or mag_v2 == 0:
-        return float('NaN')  # Handle division by zero
+        return float('NaN')  #? Handle division by zero
     cos_angle = dot_prod / (mag_v1 * mag_v2)
     angle_rad = math.acos(cos_angle)
     return math.degrees(angle_rad)
-            
-def manhattanDistance (point1: tuple[int, int], point2: tuple[int, int]):
-    return abs(point2[0] - point1[0]) + abs(point2[1] - point1[1])
-
-def getValidNeighbors (state: tuple[int, int], map: list[list[int]]) -> list[tuple[int, int]]:
-        X, Y = state
-        candidates = [(X + 1, Y - 1), (X + 1, Y + 1), (X - 1, Y - 1), (X - 1, Y + 1), (X + 1, Y), (X, Y - 1), (X, Y + 1), (X - 1, Y)]
-        width = len(map)
-        length = len(map[0])
-
-        result = []
-        for (x, y) in candidates:
-            if 0 <= x <= width - 1 and 0 <= y <= length - 1:
-                check = True
-                if (map[x][y] in [WALL, OBSTACLE]):
-                    check = False
-                
-                if (check):
-                    result.append((x, y))
-        return result
 
 def getTrendMoveDirection (state: tuple[int, int], goal: tuple[int, int]) -> str:
+    """
+    Get the trend move direction from the current state to the goal.
+    By calculating the angle between the vector from the current state to the goal and the 8 direction vectors.
+    Choose the direction with the smallest angle.
+    """
     X = state[0]
     Y = state[1]
     goalX = goal[0]
@@ -75,6 +79,9 @@ def getTrendMoveDirection (state: tuple[int, int], goal: tuple[int, int]) -> str
     return trendMoveDirection
     
 def setOrderOfNeighbor (state: tuple[int, int], trendMoveDirection, neighbors: list[tuple[int, int]]) -> list[tuple[int, int]]:
+    """
+    Set the order of the neighbors based on the trend move direction.
+    """
     X = state[0]
     Y = state[1]
     order = None
@@ -96,6 +103,9 @@ def setOrderOfNeighbor (state: tuple[int, int], trendMoveDirection, neighbors: l
     return result
 
 class Node:
+    """
+    Node class for A* algorithm.
+    """
     def __init__ (self, state: tuple[int, int], parent, goal: tuple[int, int], visited: bool = 0):
         self.state = state
         self.parent = parent
@@ -107,6 +117,11 @@ class Node:
             self.pathCost = parent.pathCost + 1
             
         self.f = self.pathCost + manhattanDistance(self.state, goal) + 100 * visited
+        """
+        Explanation for 100 * visited: 
+        We want to prioritize the unvisited nodes, so we add a large number to the f value of the visited nodes.
+        If neighbors of a node are visited, the agent can move normally to visited nodes without any problem.
+        """
         
     def __lt__ (self, other):
         return self.f < other.f

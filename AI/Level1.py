@@ -8,17 +8,21 @@ class Level1 (Level):
             + If there is hider, conduct to touch that hider.
         Through the process of moving among other wall intersections, we keep a matrix for checking visited cells which are
         identified to not include hider, and we hope that we can find the hider through the process
+        
+        On this strategy, we optimize the process of finding the nearest wall intersection by building
+        a heuristic function to estimate the distance from the current position to the wall intersection, based on two elements:
+            + The number of walls between the current position and the wall intersection (on Bresenham lines and Manhattan lines)
+            + The distance from the current position to the wall intersection
+        If two wall intersections have the same heuristic value, we will choose the wall intersection which has the shorter path
+        
+        Besides, to optimize the score of game, instead of moving to the cell which are identified the nearest wall intersection,
+        if that cell is in observable cells of the seeker can it does not include the hider, we will move to the next nearest wall intersection
+        
+        On the road to move among wall intersections, if the seeker can observe the hider or the announcement,
+        it will conduct to touch the hider
+        
         If there is not any hiders found, we will check unvisited cells and move sequentially to each cell in the order from nearest
         to furtherest.
-        
-        A wall intersection is demonstrated by the following image:
-         ------ ------
-        |      |      |
-        |      |      |
-         ------ ------
-        |      | <----
-        |      | 
-         ------
     """ 
     def __init__ (self, map: Map):
         Level.__init__ (self, map)
@@ -122,6 +126,11 @@ class Level1 (Level):
             self.pathMove: int = 0
             
     def hiderTakeTurn (self):
+        """
+        This function is created for the hider to take a turn in the game
+        Our convention for the hider is that it will broadcast an announcement after each 8 steps
+        An announcement will exist in 2 steps and then disappear
+        """
         if (self.numHiderSteps % 8 != 7):
             return
         
@@ -130,14 +139,19 @@ class Level1 (Level):
         self.announcementTime = 0
     
     def getNearestWallIntersection (self) -> tuple[int, int]:
-        #! Add all unvisited wall intersections to a list
-        unvisitedWallIntersections: list[tuple[tuple[int, int], int]] = []
+        """
+        This function is created for finding the nearest wall intersection from a start position, which can be the seeker position or the old wall intersection
+        """
+        
+        #! Identify the start position for finding the nearest wall intersection
         startPositionForFinding = None
         if (self.goalPosition is None):
             startPositionForFinding = self.seekerPosition
         else:
             startPositionForFinding = self.goalPosition
         
+        #! Add all unvisited wall intersections to a list, coming with the minimum number of walls between the start position and the wall intersection
+        unvisitedWallIntersections: list[tuple[tuple[int, int], int]] = []
         for intersection in self.listWallIntersections:
             if (not self.visitedMatrix[intersection[0]][intersection[1]]):
                 listObservableCells = self.getObservableCells(intersection)
@@ -146,7 +160,23 @@ class Level1 (Level):
                 for cell in listObservableCells:
                     numWalls = min(self.countNumWallsBetweenTwoPositions(startPositionForFinding, cell), numWalls)
                 unvisitedWallIntersections.append((intersection, numWalls))
-                
+        
+        #! Find the nearest wall intersection
+        """
+        Our heuristic function is: h = d - 0.9 * isCorner
+        with d is the distance from the start position to the wall intersection
+        and isCorner is 1 if the wall intersection is a corner, otherwise, it is 0
+        
+        0.9 can be replaced by another value, which is less than 1, because:
+            + We can prioritize the wall intersections which are corners if the value d of two wall intersections is the same
+            + 0.9 or any value less than 1 can reduce the ambiguity of the equal heuristic values
+        
+        We will choose the wall intersection which has the minimum heuristic value
+        If two wall intersections have the same heuristic value, we will choose the wall intersection which has the shorter path
+        
+        If an intersection was identified, but there is no paths to go to that intersection, we will ignore that intersection
+        If there is not any wall intersection, we will return None
+        """        
         nearestWallIntersection: tuple[int, int] = None
         minHeuristic = 1000000000
         AStar = None
@@ -167,6 +197,11 @@ class Level1 (Level):
         return nearestWallIntersection
     
     def identifyObservableHider (self):
+        """
+        This function is created for identifying the hider in the observable cells of the seeker
+        If a cell is identified not including the hider, we will set the value of the cell in the visited matrix to True
+        """
+        
         Position: tuple[int, int] = None
         
         for i in range (0, len(self.listObservableCells)):
@@ -178,6 +213,10 @@ class Level1 (Level):
         return Position
     
     def identifyObservableAnnouncement (self):
+        """
+        This function is created for identifying the announcement in the observable cells of the seeker
+        """
+        
         for i in range (0, len(self.listObservableCells)):
             if (self.announcement is not None and self.listObservableCells[i] == self.announcement):
                 return self.listObservableCells[i]
@@ -185,9 +224,16 @@ class Level1 (Level):
         return None
     
     def seekerTakeTurn (self):
+        """
+        This function is created for the seeker to take a turn in the game
+        """
+        
+        #! Move to the next position in the path and update the list of observable cells
         self.seekerPosition = self.path[self.pathMove]
         self.pathMove = self.pathMove + 1
         self.listObservableCells = self.getObservableCells(self.seekerPosition)
+        
+        #! If the seeker is in the process of chasing the hider, the program will not update any new information
         if (self.IdentifiedHider is not None):
             return
         else:
@@ -203,8 +249,9 @@ class Level1 (Level):
             self.goalPosition = self.IdentifiedHider
             self.path = self.getShortestPath(self.seekerPosition, self.goalPosition, self.visitedMatrix)
             
+            #! The path can be None if it does not exist, meaning that the seeker cannot reach the hider
             if (self.path is None):
-                self.giveUp = True
+                self.giveUp = True #! Then the seeker will give up
             else:    
                 self.pathMove = 0
                 
@@ -215,10 +262,12 @@ class Level1 (Level):
             if (self.IdentifiedHider is not None):
                 return       
             else:
+                #! Reached the wall intersection -> Find the next wall intersection
                 self.goalPosition = self.getNearestWallIntersection()
                 if (self.goalPosition is not None):
                     self.path = self.getShortestPath(self.seekerPosition, self.goalPosition, self.visitedMatrix)
                     self.pathMove = 0
+                #! There is not any wall intersection -> Find the nearest unvisited cell
                 else:
                     level = 1
                     found = False
@@ -245,8 +294,9 @@ class Level1 (Level):
                             break
                 
                         level = level + 1
-                        
-                    if (self.path is None):
+                    
+                    #! There is not any unvisited cell or there does not exist any paths to go to the unvisited cell -> Give up  
+                    if (not found):
                         self.giveUp = True
                         return
                     

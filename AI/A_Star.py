@@ -2,6 +2,11 @@ from heapq import heappush, heappop
 from AI.util import *
 
 def A_Star (start: tuple[int, int], goal: tuple[int, int], map: list[list[int]], visitedMatrix: list[list[bool]] = None) -> Node:
+    """
+    A* algorithm.
+    At each node, if the parameter visitedMatrix is not None, 
+    the cost of the node can be considered as the sum of the path cost, the heuristic cost, and the visited cost.
+    """
     node: Node = None
     if (visitedMatrix is None):
         node = Node(start, None, goal)
