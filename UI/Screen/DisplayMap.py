@@ -49,11 +49,12 @@ class DisplayMap:
         game = Level1(map)
 
         listThings = game.level1()
-        prev = next(listThings)
+        prev = deepcopy(next(listThings))
         # Loop through each step
         for thing in listThings:
             score = thing[2]  # Current score
             seeker_pos = thing[0]
+            self.give_up = thing[-1]  # Giving up signs
 
             # The direction the the seeker takes
             direction = getDirection(prev[0], seeker_pos)
@@ -75,8 +76,11 @@ class DisplayMap:
             # Recover the announcement position
             if thing[4]:
                 self.cur_map[thing[4][0]][thing[4][1]] = tmp
+                
+            if self.give_up: # Quit the game if the seeker gives up
+                break
             # Let the current step be the previous step
-            prev = thing
+            prev = deepcopy(thing)
         self.score = score
 
     def runLevel2(self):
@@ -88,11 +92,12 @@ class DisplayMap:
         game = Level2(map)
 
         listThings = game.level2()
-        prev = next(listThings)
+        prev = deepcopy(next(listThings))
 
         for thing in listThings:
             score = thing[2]
             seeker_pos = thing[0]
+            self.give_up = thing[-1]
 
             # Get the seeker's direction
             direction = getDirection(prev[0], seeker_pos)
@@ -115,9 +120,12 @@ class DisplayMap:
             if thing[4]: # Recover the announcement
                 for i, (x, y) in enumerate(thing[4]):
                     self.cur_map[x][y] = tmp[i]
+                    
+            if self.give_up: # Quit the game if the seeker gives up
+                break
 
             # Update the previous to the current
-            prev = thing
+            prev = deepcopy(thing)
         self.score = score
 
     def runLevel3(self):
