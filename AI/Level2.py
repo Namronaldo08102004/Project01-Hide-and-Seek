@@ -4,9 +4,6 @@ class Level2 (Level):
     """
         Our strategy for level 2 is same with level 1
         
-        One thing worth noting is that it the seeker meets many hiders, it will choose the hider which is the nearest to touch
-        The same thing happens with the announcement
-        
         If a hider was identified not be able to touch, the seeker will ignore it in next steps
         The seeker will give when the number of ignored hiders is equal to the number of hiders currently in the map
     """ 
@@ -18,7 +15,7 @@ class Level2 (Level):
         This attribute stores hiders which are permanently ignored by the seeker
         If the number of ignored hiders is equal to the number of hiders currently in the map, the seeker will give up
         """  
-        self.ignoredHiders: list[Hider] = []
+        self.ignoredHiders: list[tuple[int, int]] = []
         
         #! Define a temporary matrix for saving cells that were identified to not include hider
         self.visitedMatrix: list[list[bool]] = []
@@ -81,7 +78,7 @@ class Level2 (Level):
         self.listHiderPositions: list[tuple[int, int]] = map.listHiderPositions.copy()
         
         self.listObservableCells: list[tuple[int, int]] = self.getObservableCells(self.seekerPosition)
-        self.listIdentifiedHiders: list[Hider] = self.identifyObservableHiders()
+        self.listIdentifiedHiders: list[tuple[int, int]] = self.identifyObservableHiders()
         
         #? Announcement will be broadcast by hider after each 8 steps and will exist in 2 steps
         """
@@ -96,9 +93,7 @@ class Level2 (Level):
         self.path: list[tuple[int, int]] = None
         self.pathMove: int = 0
         if (len(self.listIdentifiedHiders) != 0):
-            goal = heappop(self.listIdentifiedHiders)
-            self.goalPosition = goal.state
-            heappush(self.listIdentifiedHiders, goal)
+            self.goalPosition = self.listIdentifiedHiders[0]
             self.path = self.getShortestPath(self.seekerPosition, self.goalPosition, self.visitedMatrix)
             self.pathMove = 0
         else:
@@ -155,11 +150,11 @@ class Level2 (Level):
         return nearestWallIntersection
     
     def identifyObservableHiders (self):
-        listHiderPositions: list[Hider] = []
+        listHiderPositions: list[tuple[int, int]] = []
         
         for i in range (0, len(self.listObservableCells)):
             if (self.listObservableCells[i] in self.listHiderPositions):
-                heappush(listHiderPositions, Hider(self.listObservableCells[i], self.seekerPosition, self.map.matrix, self.visitedMatrix))
+                listHiderPositions.append(self.listObservableCells[i])
             else:
                 self.visitedMatrix[self.listObservableCells[i][0]][self.listObservableCells[i][1]] = True
                 
@@ -175,15 +170,19 @@ class Level2 (Level):
         return listAnnouncementPositions
     
     def seekerTakeTurn (self):
-        def checkGoalPositionInListIdentifiedHiders (goalPosition: tuple[int, int], listIdentifiedHiders: list[Hider]):
-            """
-            This function is used to check whether the goal position is in the list of identified hiders or not
-            """
-            for hider in listIdentifiedHiders:
-                if goalPosition == hider.state:
-                    return True
-            
-            return False
+        def union (list1: list[tuple[int, int]], list2: list[tuple[int, int]]) -> list[tuple[int, int]]:
+            for cell in list2:
+                if cell not in list1:
+                    list1.append(cell)
+                    
+            return list1
+        
+        def diff (list1: list[tuple[int, int]], list2: list[tuple[int, int]]) -> list[tuple[int, int]]:
+            for cell in list2:
+                if cell in list1:
+                    list1.remove(cell)
+                    
+            return list1
         
         #! If the number of ignored hiders is equal to the number of hiders currently in the map, the seeker will give up
         if (len(self.ignoredHiders) == len(self.listHiderPositions)):
@@ -201,20 +200,21 @@ class Level2 (Level):
             listIdentifiedAnnouncements = self.identifyObservableAnnouncements()
             
             if (listIdentifiedAnnouncements):
-                listCorrespondingHiders: list[Hider] = []
+                listCorrespondingHiders: list[tuple[int, int]] = []
                 for announcement in listIdentifiedAnnouncements:
                     correspondingHiders = self.announcementDict[announcement]
                     
                     for correspondingHider in correspondingHiders:
-                        if (not self.visitedMatrix[correspondingHider[0]][correspondingHider[1]] and correspondingHider not in self.ignoredHiders):
-                            heappush(listCorrespondingHiders, Hider(correspondingHider, self.seekerPosition, self.map.matrix, self.visitedMatrix))
+                        shortestPath = self.getShortestPath(self.seekerPosition, correspondingHider, self.visitedMatrix)
+                        if (shortestPath is not None and not self.visitedMatrix[correspondingHider[0]][correspondingHider[1]] and correspondingHider not in self.ignoredHiders):
+                            listCorrespondingHiders.append(correspondingHider)
                         
-                self.listIdentifiedHiders = list(set(self.listIdentifiedHiders).union(set(listCorrespondingHiders)))
-                self.listIdentifiedHiders = list(set(self.listIdentifiedHiders) - set(self.ignoredHiders))
+                self.listIdentifiedHiders = union(self.listIdentifiedHiders, listCorrespondingHiders)
+                self.listIdentifiedHiders = diff(self.listIdentifiedHiders, self.ignoredHiders)
             
             #! Get the union of the old list of identified hiders and the new one
-            self.listIdentifiedHiders = list(set(self.listIdentifiedHiders).union(set(tempListIdentifiedHiders)))
-            self.listIdentifiedHiders = list(set(self.listIdentifiedHiders) - set(self.ignoredHiders))
+            self.listIdentifiedHiders = union(self.listIdentifiedHiders, tempListIdentifiedHiders)
+            self.listIdentifiedHiders = diff(self.listIdentifiedHiders, self.ignoredHiders)
             
             #! If the seeker has not reached the goal position, it will continue to move to the goal position
             if (self.seekerPosition != self.goalPosition):
@@ -225,28 +225,27 @@ class Level2 (Level):
             listIdentifiedAnnouncements = self.identifyObservableAnnouncements()
             
             if (listIdentifiedAnnouncements):
-                listCorrespondingHiders: list[Hider] = []
+                listCorrespondingHiders: list[tuple[int, int]] = []
                 for announcement in listIdentifiedAnnouncements:
                     correspondingHiders = self.announcementDict[announcement]
                     
                     for correspondingHider in correspondingHiders:
-                        if (not self.visitedMatrix[correspondingHider[0]][correspondingHider[1]] and correspondingHider not in self.ignoredHiders):
-                            heappush(listCorrespondingHiders, Hider(correspondingHider, self.seekerPosition, self.map.matrix, self.visitedMatrix))
+                        shortestPath = self.getShortestPath(self.seekerPosition, correspondingHider, self.visitedMatrix)
+                        if (shortestPath is not None and not self.visitedMatrix[correspondingHider[0]][correspondingHider[1]] and correspondingHider not in self.ignoredHiders):
+                            listCorrespondingHiders.append(correspondingHider)
                         
-                self.listIdentifiedHiders = list(set(self.listIdentifiedHiders).union(set(listCorrespondingHiders)))
-                self.listIdentifiedHiders = list(set(self.listIdentifiedHiders) - set(self.ignoredHiders))
+                self.listIdentifiedHiders = union(self.listIdentifiedHiders, listCorrespondingHiders)
+                self.listIdentifiedHiders = diff(self.listIdentifiedHiders, self.ignoredHiders)
         
         #! Observed any hider --> Conduct to touch that hider
-        if (len(self.listIdentifiedHiders) != 0 and not checkGoalPositionInListIdentifiedHiders(self.goalPosition, self.listIdentifiedHiders)):
-            goal = heappop(self.listIdentifiedHiders)
-            self.goalPosition = goal.state
-            heappush(self.listIdentifiedHiders, goal)
+        if (len(self.listIdentifiedHiders) != 0 and self.goalPosition not in self.listIdentifiedHiders):
+            self.goalPosition = self.listIdentifiedHiders[0]
             self.path = self.getShortestPath(self.seekerPosition, self.goalPosition, self.visitedMatrix)
             
             if (self.path is not None):
                 self.pathMove = 0
             else:
-                self.ignoredHiders.append(goal)    
+                self.ignoredHiders.append(self.goalPosition)   
                 
             return
         
@@ -255,15 +254,9 @@ class Level2 (Level):
             self.visitedMatrix[self.goalPosition[0]][self.goalPosition[1]] = True
             
             #! Reached the position of the hider
-            if (len(self.listIdentifiedHiders) != 0 and checkGoalPositionInListIdentifiedHiders(self.goalPosition, self.listIdentifiedHiders)):
+            if (len(self.listIdentifiedHiders) != 0 and self.goalPosition in self.listIdentifiedHiders):
                 #! Remove that hider from the list of identified hiders as well as the list of hider positions in the map
-                removeHider = None
-                for hider in self.listIdentifiedHiders:
-                    if (self.goalPosition == hider.state):
-                        removeHider = hider
-                        break
-                
-                self.listIdentifiedHiders.remove(removeHider)
+                self.listIdentifiedHiders.remove(self.goalPosition)
                 self.listHiderPositions.remove(self.goalPosition)
                 
                 #? If there is no hider in the map, the seeker will win
@@ -272,15 +265,13 @@ class Level2 (Level):
                 
                 #? If the seeker still has unvisited hiders, it will continue to chase the next hider
                 if (len(self.listIdentifiedHiders) != 0):
-                    goal = heappop(self.listIdentifiedHiders)
-                    self.goalPosition = goal.state
-                    heappush(self.listIdentifiedHiders, goal)
+                    self.goalPosition = self.listIdentifiedHiders[0]
                     self.path = self.getShortestPath(self.seekerPosition, self.goalPosition, self.visitedMatrix)
                     
                     if (self.path is not None):
                         self.pathMove = 0
                     else:
-                        self.ignoredHiders.append(goal)
+                        self.ignoredHiders.append(self.goalPosition)
                 #? If the seeker is not identifying any hiders, it will find the nearest wall intersection or nearest unvisited cells
                 else:
                     self.goalPosition = self.getNearestWallIntersection()

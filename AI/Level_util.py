@@ -6,38 +6,13 @@ class Hider:
     """
     This class is used to create hider objects, served for comparing two hider objects in level 2 and moving hiders in level 3
     """
-    def __init__ (self, state: tuple[int, int], startPosition: tuple[int, int] = None, map = None, visitedMatrix = None, id: int = None):
+    def __init__ (self, state: tuple[int, int], map, id: int = None):
         self.id = id #? This attribute is used to compare two hider objects
         self.state = state
-        self.startPosition = startPosition #? This attribute is used to calculate the shortest path from a certain position to the hider
         self.map = map
-        self.visitedMatrix = visitedMatrix 
         
         self.hiderObservableCells = self.getObservableCellsOfHider(self.state)
         self.identifiedSeeker = None #? This attribute is used to pass into parameters of A_Star function in __lt__ method
-        
-    def __lt__ (self, other):
-        if (self.startPosition is not None and other.startPosition is not None):
-            goal1 = None
-            goal2 = None
-            if (self.visitedMatrix is None):
-                goal1 = A_Star(self.startPosition, self.state, self.map, self.visitedMatrix)
-                goal2 = A_Star(self.startPosition, other.state, self.map, self.visitedMatrix)
-            else:
-                goal1 = A_Star(self.startPosition, self.state, self.map)
-                goal2 = A_Star(self.startPosition, other.state, self.map)
-            
-            shortestPath1 = []
-            shortestPath2 = []
-            
-            while (goal1 is not None):
-                shortestPath1.append(goal1.state)
-                goal1 = goal1.parent
-            while (goal2 is not None):
-                shortestPath2.append(goal2.state)
-                goal2 = goal2.parent
-            
-            return len(shortestPath1) < len(shortestPath2)
     
     """
     Three below methods are used to compare two hider objects, as well as to hash them when we add them into a set
