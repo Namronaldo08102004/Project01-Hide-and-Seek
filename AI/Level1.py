@@ -2,21 +2,21 @@ from AI.Level_util import *
 
 class Level1 (Level):
     """
-        Our strategy for level 1 is sequentialy finding each wall intersection in the map.
+        Our strategy for level 1 is sequentialy finding the nearest wall intersection from the current position in the map.
         When reached a certain wall intersection:
             + If there is not hider around this wall position, we will move to the next nearest wall intersection.
             + If there is hider, conduct to touch that hider.
         Through the process of moving among other wall intersections, we keep a matrix for checking visited cells which are
-        identified to not include hider, and we hope that we can find the hider through the process
+        identified to not include hider, and we hope that we can find the only hider through the process
         
         On this strategy, we optimize the process of finding the nearest wall intersection by building
         a heuristic function to estimate the distance from the current position to the wall intersection, based on two elements:
             + The number of walls between the current position and the wall intersection (on Bresenham lines and Manhattan lines)
-            + The distance from the current position to the wall intersection
+            + Whether the wall intersection is a corner or not.
         If two wall intersections have the same heuristic value, we will choose the wall intersection which has the shorter path
         
         Besides, to optimize the score of game, instead of moving to the cell which are identified the nearest wall intersection,
-        if that cell is in observable cells of the seeker can it does not include the hider, we will move to the next nearest wall intersection
+        if that cell is in observable cells of the seeker and it does not include the hider, we will move to the next nearest wall intersection
         
         On the road to move among wall intersections, if the seeker can observe the hider or the announcement,
         it will conduct to touch the hider

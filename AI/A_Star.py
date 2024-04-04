@@ -1,6 +1,30 @@
 from heapq import heappush, heappop
 from AI.util import *
 
+class Node:
+    """
+    Node class for A* algorithm.
+    """
+    def __init__ (self, state: tuple[int, int], parent, goal: tuple[int, int], visited: bool = 0):
+        self.state = state
+        self.parent = parent
+        self.pathCost = None
+        
+        if (parent is None):
+            self.pathCost = 0
+        else:
+            self.pathCost = parent.pathCost + 1
+            
+        self.f = self.pathCost + manhattanDistance(self.state, goal) + 100 * visited
+        """
+        Explanation for 100 * visited: 
+        We want to prioritize the unvisited nodes, so we add a large number to the f value of the visited nodes.
+        If neighbors of a node are visited, the agent can move normally to visited nodes without any problem.
+        """
+        
+    def __lt__ (self, other):
+        return self.f < other.f
+
 def A_Star (start: tuple[int, int], goal: tuple[int, int], map: list[list[int]], visitedMatrix: list[list[bool]] = None) -> Node:
     """
     A* algorithm.

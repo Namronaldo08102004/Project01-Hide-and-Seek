@@ -39,7 +39,7 @@ class Hider:
         """
         Firstly, we create a boolean matrix with the maximum size of 5x5 around the hider position (We only get valid cells in the map)
         We initially assign False to the cells that are walls or obstacles, and True to the other cells
-        Through instantiate this matrix, we can get the exact position of the hider in the matrix, which supports us to identify the observable cells
+        Through instantiating this matrix, we can get the exact position of the hider in the matrix, which supports us to identify the observable cells
         """
         radius_2_matrix: list[list[bool]] = []
         hider_position_in_matrix: tuple[int, int] = None

@@ -5,7 +5,7 @@ class Level2 (Level):
         Our strategy for level 2 is same with level 1
         
         If a hider was identified not be able to touch, the seeker will ignore it in next steps
-        The seeker will give when the number of ignored hiders is equal to the number of hiders currently in the map
+        The seeker will give up when the number of ignored hiders is equal to the number of hiders currently in the map
     """ 
     def __init__ (self, map: Map):
         Level.__init__ (self, map)
