@@ -472,7 +472,7 @@ class Level3 (Level):
             + Until now, if there are many tuples satisfying the above statement, we consider two cases:
                 o If the first taker is the seeker, we will choose the cell that the number of cells the hider can move to not be caught in the next move is the smallest
                 o If the first taker is the hider, we will sequentially consider the following conditions, prioritized from the highest to the lowest:
-                    - If the cell is a wall intersection that we still move diagonally if moving to that intersection, choose that cell
+                    - If the cell is not a wall intersection or is a wall intersection that we still move diagonally if moving to that intersection, choose that cell
                     - If the cell can allow hider to have the largest number of escape cells (we suppose that the hider thinks that the seeker 
                     will minimize the number of cells the hider can move to not be caught in the next move), choose that cell
                     - If the cell can allow hider to observe the largest number of cells excluding wall intersections, choose that cell
