@@ -217,7 +217,7 @@ class DisplayMap:
                     pygame.time.wait(CHASE_RANGE_TIME)
                     break
         # Delay the game at each step
-        pygame.time.wait(DELAY_TIME)
+        pygame.time.wait(DELAY_TIME if self.level < 3 else DELAY_TIME // 2)
 
     # Return the result of the game
     def getResult(self):
