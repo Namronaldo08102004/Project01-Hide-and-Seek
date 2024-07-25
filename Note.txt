@@ -1,13 +1,13 @@
 Project này nhóm được 8.25đ (Một điểm số ko tệ, ít nhất là cao nhất lớp), nhận xét của thầy như sau:
-+ Level 4 không làm (-1) -> Không có gì phải bàn
++ Level 4 không làm (-1) -> Không có gì phải bàn.
 + Level 3 tại sao hider lại đợi seeker tới gần mới di chuyển? Tại sao thiết lập hider chỉ có 1 đường 
 chạy duy nhất khi chạy khỏi seeker lúc bị seeker tiếp cận? Thiết kế map hơi lý tưởng quá. (-0.75)
 -> Về ý này, nhóm đã xem xét và rút ra được một vài kinh nghiệm:
 - Về ý đầu tiên, nhóm đã có sự phân vân trong quá trình làm nhưng đã sơ suất khi không trao đổi và
-hỏi ý kiến của thầy -> sẽ rút kinh nghiệm về tác phong làm việc
+hỏi ý kiến của thầy -> sẽ rút kinh nghiệm về tác phong làm việc.
 - Về ý thứ hai, người làm phần AI đã sơ sót khi lại chọn phương án đầu tiên tối ưu nhất sau khi đã
 xem xét tất cả điều kiện tối ưu, thay vì gom các phương án có cùng sự "tối ưu" lại vào 1 cái list
-rồi cho random -> Tôi quá sơ suất
+rồi cho random -> Tôi quá sơ suất.
 - Về ý thứ ba, "map lý tưởng" mà thầy đề cập có thể hiểu là vì ở các map mà nhóm đặt ra, tại mỗi
 thời điểm, hider luôn chỉ có duy nhất 1 phương án tối ưu mà không phải nhiều cái, điều này khiến 
 cho các map trở lên "lý tưởng" -> Đây cx là hệ quả cho ý thứ hai.
